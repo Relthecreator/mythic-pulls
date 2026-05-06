@@ -2,8 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen
 } from 'lucide-react';
+
+// --- FIREBASE IMPORTS ---
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 // --- GAME DATA & CONFIGURATION ---
 
@@ -31,7 +36,6 @@ const ELEMENTS = {
   Cosmic: { icon: Moon, color: 'text-fuchsia-600', artBg: 'from-fuchsia-700 to-indigo-950', imgFilter: 'hue-rotate-[290deg] contrast-150 saturate-200' }
 };
 
-// Generate Energy Cards automatically for every Element
 const ENERGY_CARDS = Object.keys(ELEMENTS).map((el) => ({
   id: `en_${el.toLowerCase()}`,
   name: `${el} Energy`,
@@ -44,7 +48,6 @@ const ENERGY_CARDS = Object.keys(ELEMENTS).map((el) => ({
   imgSrc: '' 
 }));
 
-// Standard Characters
 const COMBAT_CHARACTERS = [
   // --- SET 1: GENESIS ---
   { id: 'c1', set: 'genesis', name: 'Water Bubble', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Cleanse: Removes burn effects.', flavor: 'A cheerful droplet of sentient water.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=slime' },
@@ -182,26 +185,24 @@ const rollRarity = (dropRates) => {
 const openPack = (pack) => {
   let pulled = [];
   
-  // Get cards specific to this pack's set
   const setCards = COMBAT_CHARACTERS.filter(c => c.set === pack.set);
 
   pack.guaranteed.forEach(rarity => {
     let possible = setCards.filter(c => c.rarity === rarity);
-    if(possible.length === 0) possible = setCards; // Fallback if set lacks rarity
+    if(possible.length === 0) possible = setCards; 
     pulled.push({ ...possible[Math.floor(Math.random() * possible.length)], instanceId: Math.random().toString(36).substr(2, 9) });
   });
   
-  // Always give 1 Energy
   pulled.push({ ...ENERGY_CARDS[Math.floor(Math.random() * ENERGY_CARDS.length)], instanceId: Math.random().toString(36).substr(2, 9) });
   
   const remaining = pack.cardCount - pack.guaranteed.length - 1;
   for (let i = 0; i < remaining; i++) {
     const rolledRarity = rollRarity(pack.dropRates);
     let possible = setCards.filter(c => c.rarity === rolledRarity);
-    if(possible.length === 0) possible = setCards.filter(c => c.rarity === 'Common'); // Fallback
+    if(possible.length === 0) possible = setCards.filter(c => c.rarity === 'Common'); 
     pulled.push({ ...possible[Math.floor(Math.random() * possible.length)], instanceId: Math.random().toString(36).substr(2, 9) });
   }
-  return pulled.sort((a, b) => RARITY_WEIGHTS[b.rarity] - RARITY_WEIGHTS[a.rarity]); // Sort Highest rarity first
+  return pulled.sort((a, b) => RARITY_WEIGHTS[b.rarity] - RARITY_WEIGHTS[a.rarity]); 
 };
 
 // --- COMPONENTS ---
@@ -230,7 +231,6 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
 
   const selectionRing = isSelected ? 'ring-4 ring-amber-400 ring-offset-2 ring-offset-stone-900 scale-105' : '';
 
-  // Energy Card Render
   if (card.isEnergy) {
     return (
       <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
@@ -251,7 +251,6 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
     );
   }
 
-  // Combat Card Render
   return (
     <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
       <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d shadow-xl rounded-2xl ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
@@ -282,11 +281,9 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
             {/* In Battle Overlays */}
             {inBattle && (
                <>
-                 {/* HP Bar */}
                  <div className="absolute top-1 left-1 right-1 bg-black/60 rounded-full h-2 sm:h-3 overflow-hidden z-30 border border-white/20 backdrop-blur-sm">
                     <div className={`h-full transition-all duration-300 ${card.currentHp > card.hp * 0.5 ? 'bg-green-500' : card.currentHp > card.hp * 0.2 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${Math.max(0, (card.currentHp / card.hp) * 100)}%` }}></div>
                  </div>
-                 {/* Attached Energy Indicators */}
                  {card.attachedEnergy > 0 && (
                    <div className="absolute bottom-[35%] right-2 flex flex-col gap-1 z-30">
                      {[...Array(card.attachedEnergy)].map((_, i) => (
@@ -327,7 +324,7 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
 
 // --- BATTLE ARENA COMPONENT ---
 const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
-  const [gameState, setGameState] = useState('setup'); // setup, playerTurn, botTurn, gameOver
+  const [gameState, setGameState] = useState('setup');
   const [winner, setWinner] = useState(null);
   const [log, setLog] = useState(["Battle starting... Shuffling decks."]);
 
@@ -335,7 +332,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
   const [bot, setBot] = useState(null);
   const [selectedHandCard, setSelectedHandCard] = useState(null);
 
-  const addToLog = (msg) => setLog(prev => [...prev, msg].slice(-10)); // keep last 10
+  const addToLog = (msg) => setLog(prev => [...prev, msg].slice(-10)); 
 
   // Initialize Game & Mulligan Logic
   useEffect(() => {
@@ -350,7 +347,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
     let playerHasBasic = false;
     let attempts = 0;
     
-    // Player Mulligan System
     while (!playerHasBasic && attempts < 15) {
        pDeck = createBattleDeck(playerDeckIds);
        pHand = pDeck.slice(0, 7);
@@ -359,7 +355,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
        attempts++;
     }
 
-    // Bot Mulligan System
     let bDeck, bHand;
     let botHasBasic = false;
     attempts = 0;
@@ -431,10 +426,16 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
 
         // 3. Attach Energy
         let energyIndex = currentBot.hand.findIndex(c => c.isEnergy);
-        if (energyIndex >= 0 && currentBot.active) {
-           currentBot.active.attachedEnergy += 1;
-           currentBot.hand.splice(energyIndex, 1);
-           addToLog(`Bot attached Energy to ${currentBot.active.name}.`);
+        if (energyIndex >= 0) {
+           if (currentBot.active && currentBot.active.attachedEnergy < 2) {
+               currentBot.active.attachedEnergy += 1;
+               currentBot.hand.splice(energyIndex, 1);
+               addToLog(`Bot attached Energy to ${currentBot.active.name}.`);
+           } else if (currentBot.bench.length > 0) {
+               currentBot.bench[0].attachedEnergy += 1;
+               currentBot.hand.splice(energyIndex, 1);
+               addToLog(`Bot attached Energy to benched ${currentBot.bench[0].name}.`);
+           }
            setBot({...currentBot});
            await new Promise(r => setTimeout(r, 1000));
         }
@@ -506,18 +507,17 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
     if (gameState !== 'setup' && gameState !== 'playerTurn') return;
     
     if (selectedHandCard?.index === index) {
-      setSelectedHandCard(null); // deselect
+      setSelectedHandCard(null); 
       return;
     }
     setSelectedHandCard({ card, index });
   };
 
-  const handlePlayAreaClick = (area) => {
+  const handlePlayAreaClick = (area, benchIndex = null) => {
     if (!selectedHandCard || (gameState !== 'setup' && gameState !== 'playerTurn')) return;
     const { card, index } = selectedHandCard;
 
     if (area === 'active' && !player.active && !card.isEnergy) {
-       // Promote to active
        setPlayer(p => {
          let newHand = [...p.hand];
          newHand.splice(index, 1);
@@ -525,10 +525,9 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
        });
        addToLog(`Played ${card.name} to Active.`);
        setSelectedHandCard(null);
-       if (gameState === 'setup' && bot.active) setGameState('playerTurn'); // End setup if both have actives
+       if (gameState === 'setup' && bot.active) setGameState('playerTurn'); 
     } 
     else if (area === 'bench' && player.bench.length < 5 && !card.isEnergy) {
-       // Play to bench
        setPlayer(p => {
          let newHand = [...p.hand];
          newHand.splice(index, 1);
@@ -538,13 +537,23 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
        setSelectedHandCard(null);
     }
     else if (area === 'active' && card.isEnergy && player.active && !player.energyAttachedThisTurn && gameState === 'playerTurn') {
-       // Attach energy
        setPlayer(p => {
          let newHand = [...p.hand];
          newHand.splice(index, 1);
          return { ...p, hand: newHand, active: { ...p.active, attachedEnergy: p.active.attachedEnergy + 1 }, energyAttachedThisTurn: true };
        });
        addToLog(`Attached Energy to ${player.active.name}.`);
+       setSelectedHandCard(null);
+    }
+    else if (area === 'benchCard' && card.isEnergy && benchIndex !== null && !player.energyAttachedThisTurn && gameState === 'playerTurn') {
+       setPlayer(p => {
+         let newHand = [...p.hand];
+         newHand.splice(index, 1);
+         let newBench = [...p.bench];
+         newBench[benchIndex] = { ...newBench[benchIndex], attachedEnergy: newBench[benchIndex].attachedEnergy + 1 };
+         return { ...p, hand: newHand, bench: newBench, energyAttachedThisTurn: true };
+       });
+       addToLog(`Attached Energy to benched ${player.bench[benchIndex].name}.`);
        setSelectedHandCard(null);
     }
   };
@@ -606,7 +615,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
     }
   };
 
-  // Bot auto-setup on mount
   useEffect(() => {
     if (gameState === 'setup' && bot && !bot.active && bot.hand.length > 0) {
        let currentBot = { ...bot, hand: [...bot.hand] };
@@ -620,7 +628,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
     }
   }, [bot, gameState, player]);
 
-  // --- RENDER ARENA ---
   if (!player || !bot) {
     return <div className="flex-1 flex flex-col items-center justify-center">
        <Sparkles className="w-16 h-16 text-amber-500 animate-spin" />
@@ -645,11 +652,10 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-stone-900 border-4 border-stone-800 rounded-[2rem] overflow-hidden shadow-2xl max-h-[85vh]">
+    <div className="flex-1 flex flex-col bg-stone-900 border-4 border-stone-800 rounded-[2rem] overflow-y-auto shadow-2xl max-h-[85vh] custom-scrollbar">
       
-      {/* BOT SIDE (Top) */}
-      <div className="h-1/3 bg-stone-950/80 border-b border-stone-800 p-4 flex flex-col relative">
-         {/* Bot Deck & Prizes */}
+      {/* BOT SIDE */}
+      <div className="flex-1 min-h-[280px] shrink-0 bg-stone-950/80 border-b border-stone-800 p-4 flex flex-col relative">
          <div className="absolute top-4 left-4 flex gap-4">
             <div className="w-10 sm:w-12 aspect-[2.5/3.6] bg-gradient-to-br from-stone-800 to-black border-2 border-stone-600 rounded flex flex-col items-center justify-center shadow-md">
                <Layers className="w-4 h-4 text-stone-500 opacity-50" />
@@ -663,13 +669,11 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
             </div>
          </div>
 
-         {/* Bot Hand info */}
          <div className="absolute top-4 right-4 flex gap-1">
             <span className="text-stone-500 font-bold text-xs uppercase mr-2 mt-1">Bot Hand ({bot.hand.length})</span>
             {[...Array(Math.min(bot.hand.length, 5))].map((_, i) => <div key={i} className="w-6 h-10 bg-stone-700 rounded border border-stone-600 shadow-sm"></div>)}
          </div>
 
-         {/* Bot Bench & Active */}
          <div className="flex-1 flex flex-col items-center justify-center">
             <div className="flex gap-2 mb-4 h-24">
                {[...Array(5)].map((_, i) => (
@@ -684,8 +688,8 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
          </div>
       </div>
 
-      {/* MIDFIELD (Info / Actions) */}
-      <div className="h-16 bg-stone-800 flex justify-between items-center px-6 border-y-2 border-stone-950 shadow-inner z-10">
+      {/* MIDFIELD */}
+      <div className="h-16 shrink-0 bg-stone-800 flex justify-between items-center px-6 border-y-2 border-stone-950 shadow-inner z-10">
          <div className="flex items-center space-x-3 text-sm">
            <span className={`px-3 py-1 rounded font-black tracking-widest text-xs ${gameState === 'playerTurn' ? 'bg-amber-500 text-stone-900' : 'bg-stone-700 text-stone-400'}`}>YOUR TURN</span>
            <span className={`px-3 py-1 rounded font-black tracking-widest text-xs ${gameState === 'botTurn' ? 'bg-red-500 text-stone-900' : 'bg-stone-700 text-stone-400'}`}>BOT TURN</span>
@@ -708,10 +712,8 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
          </div>
       </div>
 
-      {/* PLAYER SIDE (Bottom) */}
-      <div className="h-1/2 bg-stone-900 p-4 flex flex-col justify-between relative">
-         
-         {/* Player Deck visual */}
+      {/* PLAYER SIDE */}
+      <div className="flex-[1.5] min-h-[420px] shrink-0 bg-stone-900 p-4 flex flex-col justify-between relative">
          <div className="absolute bottom-4 left-4 flex flex-col items-center">
             <div 
                className={`w-14 sm:w-20 aspect-[2.5/3.6] bg-gradient-to-br from-amber-900 to-black border-4 border-amber-600/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:-translate-y-2 transition-transform shadow-xl ${gameState === 'playerTurn' && !player.hasDrawnThisTurn ? 'ring-4 ring-blue-500 animate-pulse' : ''}`}
@@ -723,7 +725,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
             <span className="text-stone-500 text-[0.6rem] font-bold mt-1 uppercase">Deck (Click)</span>
          </div>
 
-         {/* Player Prizes */}
          <div className="absolute bottom-4 right-4 flex flex-col items-end">
             <span className="text-amber-500 font-bold text-xs uppercase mb-1">Prizes</span>
             <div className="flex gap-1">
@@ -731,7 +732,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
             </div>
          </div>
          
-         {/* Player Active & Bench */}
          <div className="flex-1 flex flex-col items-center justify-start mt-2">
             <div 
                className={`w-28 h-40 border-2 rounded-xl flex items-center justify-center shadow-2xl mb-4 transition-colors cursor-pointer ${!player.active && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-amber-400 bg-amber-900/20' : player.active && selectedHandCard?.card.isEnergy && !player.energyAttachedThisTurn ? 'border-emerald-400 bg-emerald-900/20' : 'border-amber-900/50 bg-stone-950'}`}
@@ -744,8 +744,20 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
                {[...Array(5)].map((_, i) => (
                  <div 
                    key={i} 
-                   className={`w-16 h-24 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${!player.bench[i] && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-amber-400/50 bg-amber-900/10' : 'border-stone-800 bg-stone-900/50'}`}
-                   onClick={() => player.bench[i] ? handleBenchPromote(i) : handlePlayAreaClick('bench')}
+                   className={`w-16 h-24 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                     !player.bench[i] && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-amber-400/50 bg-amber-900/10' : 
+                     player.bench[i] && selectedHandCard?.card.isEnergy && !player.energyAttachedThisTurn ? 'border-emerald-400 bg-emerald-900/20' :
+                     'border-stone-800 bg-stone-900/50'
+                   }`}
+                   onClick={() => {
+                      if (player.bench[i] && selectedHandCard?.card.isEnergy) {
+                         handlePlayAreaClick('benchCard', i);
+                      } else if (player.bench[i]) {
+                         handleBenchPromote(i);
+                      } else {
+                         handlePlayAreaClick('bench');
+                      }
+                   }}
                  >
                     {player.bench[i] ? <TCGCard card={player.bench[i]} size="mini" inBattle={true} /> : null}
                  </div>
@@ -753,10 +765,9 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
             </div>
          </div>
 
-         {/* Player Hand */}
-         <div className="h-32 flex justify-center items-end gap-[-20px] pb-2">
+         <div className="h-32 shrink-0 flex justify-center items-end pb-2 mt-4">
             {player.hand.map((card, idx) => (
-               <div key={card.instanceId} className="transition-transform duration-200 hover:-translate-y-4" style={{ marginLeft: idx === 0 ? 0 : '-1.5rem', zIndex: idx }}>
+               <div key={card.instanceId} className="w-24 sm:w-28 transition-transform duration-200 hover:-translate-y-4" style={{ marginLeft: idx === 0 ? 0 : '-1.5rem', zIndex: idx }}>
                  <TCGCard 
                    card={card} 
                    size="small" 
@@ -780,8 +791,76 @@ export default function App() {
   const [collection, setCollection] = useState(INITIAL_COLLECTION);
   const [deck, setDeck] = useState(STARTER_DECK); 
   const [activeTab, setActiveTab] = useState('shop'); 
+  const [showRules, setShowRules] = useState(false);
   
-  // Pack Opening State
+  // Cloud Save States
+  const [user, setUser] = useState(null);
+  const [db, setDb] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Initialize Firebase Safely
+  useEffect(() => {
+    try {
+      const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+         apiKey: "dummy", authDomain: "dummy.firebaseapp.com", projectId: "dummy"
+      };
+      const app = initializeApp(config);
+      const auth = getAuth(app);
+      setDb(getFirestore(app));
+
+      const initAuth = async () => {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      };
+      initAuth();
+      const unsubscribe = onAuthStateChanged(auth, u => setUser(u));
+      return () => unsubscribe();
+    } catch(e) {
+      console.log("Running locally without Firebase config. Cloud saves disabled.");
+      setDataLoaded(true); // Allow local play without saving
+    }
+  }, []);
+
+  // Load Data
+  useEffect(() => {
+    if (!user || !db) return;
+    const loadData = async () => {
+       try {
+          // Fix for invalid document reference: sanitize appId to ensure it is exactly one segment
+          const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-local';
+          const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'savedata', 'game');
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+             const data = snap.data();
+             if (data.coins !== undefined) setCoins(data.coins);
+             if (data.collection) setCollection(data.collection);
+             if (data.deck) setDeck(data.deck);
+          }
+       } catch(e) { console.error(e); }
+       setDataLoaded(true);
+    };
+    loadData();
+  }, [user, db]);
+
+  // Save Data
+  useEffect(() => {
+     if (dataLoaded && user && db) {
+        const saveData = async () => {
+           try {
+              // Fix for invalid document reference: sanitize appId
+              const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-local';
+              const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'savedata', 'game');
+              await setDoc(docRef, { coins, collection, deck });
+           } catch(e) { console.error(e); }
+        };
+        saveData();
+     }
+  }, [coins, collection, deck, dataLoaded, user, db]);
+
+  
   const [currentCards, setCurrentCards] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [isCardRevealed, setIsCardRevealed] = useState(false);
@@ -836,9 +915,32 @@ export default function App() {
     setDeck(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  if (!dataLoaded) {
+     return <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-500 font-black tracking-[0.2em]">LOADING SAVE DATA...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-stone-950 text-stone-200 font-sans selection:bg-amber-500/30 overflow-x-hidden relative flex flex-col">
       
+      {/* Rulebook Modal */}
+      {showRules && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-stone-900 border-2 border-amber-500 p-8 rounded-[2rem] max-w-2xl w-full shadow-[0_0_50px_rgba(245,158,11,0.2)] relative">
+             <button onClick={() => setShowRules(false)} className="absolute top-4 right-6 text-2xl font-black text-stone-500 hover:text-white transition-colors">X</button>
+             <h2 className="text-3xl font-black text-amber-500 mb-6 tracking-widest flex items-center gap-3"><BookOpen /> HOW TO PLAY</h2>
+             <ul className="space-y-4 text-stone-300 text-lg">
+                <li><span className="text-amber-500 font-bold">1. Setup:</span> Draw 7 cards. Play a Basic Character to the Active slot.</li>
+                <li><span className="text-amber-500 font-bold">2. The Turn:</span> You <strong className="text-white">must DRAW a card</strong> by clicking your deck at the start of every turn.</li>
+                <li><span className="text-amber-500 font-bold">3. Energy:</span> You can attach <strong className="text-white">ONE Energy card per turn</strong> to your Active <em className="text-white">OR Benched</em> characters.</li>
+                <li><span className="text-amber-500 font-bold">4. Bench:</span> You can have up to 5 characters on your bench.</li>
+                <li><span className="text-amber-500 font-bold">5. Attacking:</span> Attacking requires at least 1 Energy. It deals damage and automatically ends your turn.</li>
+                <li><span className="text-amber-500 font-bold">6. Prizes & GX Rule:</span> Knock out an enemy to take 1 Prize Card. But beware—knocking out a <strong className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-yellow-400">GX Character</strong> gives <strong className="text-white">2 Prize Cards!</strong></li>
+                <li><span className="text-amber-500 font-bold">7. Winning:</span> Take all 3 of your Prize Cards, or outlast your opponent so they run out of cards to draw.</li>
+             </ul>
+          </div>
+        </div>
+      )}
+
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none flex justify-center items-center opacity-30 z-0">
         <div className="w-[1000px] h-[1000px] bg-amber-900/10 blur-[150px] rounded-full mix-blend-screen"></div>
@@ -868,7 +970,10 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-3 bg-stone-950 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full border border-amber-900/50 shadow-[0_0_20px_rgba(245,158,11,0.15)] mr-1 sm:mr-2">
+        <div className="flex items-center space-x-2 sm:space-x-3 bg-stone-950 px-3 sm:px-6 py-2 sm:py-2.5 rounded-full border border-amber-900/50 shadow-[0_0_20px_rgba(245,158,11,0.15)] mr-1 sm:mr-2">
+          <button onClick={() => setShowRules(true)} className="text-amber-500 hover:text-amber-300 transition-colors mr-2 hidden sm:block" title="How to Play">
+             <BookOpen className="w-5 h-5" />
+          </button>
           <Coins className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
           <span className="font-bold text-amber-400 font-mono text-sm sm:text-lg">{coins.toLocaleString()}</span>
         </div>
