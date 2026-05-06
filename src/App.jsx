@@ -848,7 +848,8 @@ export default function App() {
         await signInWithPopup(auth, provider);
      } catch (e) {
         console.error(e);
-        alert("Login failed! Please make sure you added your Firebase Config strings into App.jsx!");
+        // Changed this line to print out the exact Firebase error message
+        alert("Login failed!\n\nError Details: " + e.message + "\n\nMake sure you added 'relthecreator.github.io' to your Authorized Domains in the Firebase Console!");
      }
   };
 
