@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 // --- GAME DATA & CONFIGURATION ---
@@ -334,7 +334,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
 
   const addToLog = (msg) => setLog(prev => [...prev, msg].slice(-10)); 
 
-  // Initialize Game & Mulligan Logic
   useEffect(() => {
     const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
     
@@ -376,7 +375,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
     
   }, [playerDeckIds]);
 
-  // --- BOT AI LOGIC ---
   useEffect(() => {
     if (gameState === 'botTurn' && bot && player) {
       const executeBotTurn = async () => {
@@ -391,7 +389,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
           ...player, active: player.active ? { ...player.active } : null
         };
 
-        // 1. Draw
         if (currentBot.deck.length > 0) {
           currentBot.hand.push(currentBot.deck.pop());
           addToLog("Bot drew a card.");
@@ -405,7 +402,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
         setBot(currentBot);
         await new Promise(r => setTimeout(r, 1000));
 
-        // 2. Play cards from hand
         let newHand = [];
         for (let card of currentBot.hand) {
           if (!card.isEnergy && currentBot.bench.length < 5) {
@@ -424,7 +420,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
         setBot({...currentBot});
         await new Promise(r => setTimeout(r, 1000));
 
-        // 3. Attach Energy
         let energyIndex = currentBot.hand.findIndex(c => c.isEnergy);
         if (energyIndex >= 0) {
            if (currentBot.active && currentBot.active.attachedEnergy < 2) {
@@ -440,7 +435,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
            await new Promise(r => setTimeout(r, 1000));
         }
 
-        // 4. Attack
         if (currentBot.active && currentPlayer.active && currentBot.active.attachedEnergy > 0) {
            addToLog(`Bot's ${currentBot.active.name} used ${currentBot.active.attack}!`);
            currentPlayer.active.currentHp -= currentBot.active.dmg;
@@ -465,7 +459,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
            addToLog("Bot ends turn.");
         }
 
-        // End Bot Turn
         await new Promise(r => setTimeout(r, 1000));
         setGameState(prev => {
            if (prev !== 'gameOver') {
@@ -480,7 +473,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
     }
   }, [gameState]);
 
-  // --- PLAYER ACTIONS ---
   const handleDraw = () => {
     if (gameState !== 'playerTurn' || player.hasDrawnThisTurn) return;
 
@@ -794,6 +786,7 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   
   // Cloud Save States
+  const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState(null);
   const [db, setDb] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -801,9 +794,22 @@ export default function App() {
   // Initialize Firebase Safely
   useEffect(() => {
     try {
-      const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-         apiKey: "dummy", authDomain: "dummy.firebaseapp.com", projectId: "dummy"
+      const isGitHub = typeof __firebase_config === 'undefined';
+
+      // 🔥 FIREBASE CONFIG INSTRUCTIONS: 
+      // If you are running this on GitHub, you MUST replace the fake strings below 
+      // with your ACTUAL Firebase project configuration!
+      const myFirebaseConfig = {
+        apiKey: "AIzaSyCcNMYKx4XMQnELN1Lgx8RMbYX3bUeFqd8",
+        authDomain: "mythic-pulls.firebaseapp.com",
+        projectId: "mythic-pulls",
+        storageBucket: "mythic-pulls.firebasestorage.app",
+        messagingSenderId: "127448359944",
+        appId: "1:127448359944:web:790aaa8de8928241e6ddbd",
+        measurementId: "G-6319YPL6H7"
       };
+
+      const config = !isGitHub ? JSON.parse(__firebase_config) : myFirebaseConfig;
       const app = initializeApp(config);
       const auth = getAuth(app);
       setDb(getFirestore(app));
@@ -811,26 +817,53 @@ export default function App() {
       const initAuth = async () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
+        } else if (isGitHub) {
+           // We are on GitHub! Show the login screen instead of anonymous login.
+           setShowLogin(true);
         } else {
           await signInAnonymously(auth);
         }
       };
       initAuth();
-      const unsubscribe = onAuthStateChanged(auth, u => setUser(u));
+
+      const unsubscribe = onAuthStateChanged(auth, u => {
+         if (u) {
+            setUser(u);
+            setShowLogin(false);
+         } else if (isGitHub) {
+            setShowLogin(true);
+         }
+      });
       return () => unsubscribe();
     } catch(e) {
-      console.log("Running locally without Firebase config. Cloud saves disabled.");
-      setDataLoaded(true); // Allow local play without saving
+      console.error("Firebase init failed. Did you add your config?", e);
+      setDataLoaded(true); 
     }
   }, []);
+
+  const handleGoogleLogin = async () => {
+     try {
+        const auth = getAuth();
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+     } catch (e) {
+        console.error(e);
+        alert("Login failed! Please make sure you added your Firebase Config strings into App.jsx!");
+     }
+  };
+
+  const handleLogout = () => {
+     const auth = getAuth();
+     signOut(auth);
+     setShowLogin(true);
+  };
 
   // Load Data
   useEffect(() => {
     if (!user || !db) return;
     const loadData = async () => {
        try {
-          // Fix for invalid document reference: sanitize appId to ensure it is exactly one segment
-          const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-local';
+          const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-live';
           const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'savedata', 'game');
           const snap = await getDoc(docRef);
           if (snap.exists()) {
@@ -850,8 +883,7 @@ export default function App() {
      if (dataLoaded && user && db) {
         const saveData = async () => {
            try {
-              // Fix for invalid document reference: sanitize appId
-              const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-local';
+              const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-live';
               const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'savedata', 'game');
               await setDoc(docRef, { coins, collection, deck });
            } catch(e) { console.error(e); }
@@ -915,6 +947,27 @@ export default function App() {
     setDeck(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  // --- RENDERING SCREENS ---
+
+  if (showLogin && !user) {
+     return (
+        <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center text-white p-4">
+           <Layers className="w-20 h-20 text-amber-500 mb-6 drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]" />
+           <h1 className="text-4xl sm:text-6xl font-black text-amber-500 tracking-widest mb-4 drop-shadow-lg text-center">MYTHIC PULLS</h1>
+           <p className="text-stone-400 mb-12 text-center max-w-md text-sm sm:text-lg">Sign in to save your collection, coins, and battle decks to the cloud!</p>
+           <button onClick={handleGoogleLogin} className="px-6 py-4 sm:px-8 bg-white text-stone-950 font-black rounded-full flex items-center gap-3 hover:bg-stone-200 transition-transform hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              SIGN IN WITH GOOGLE
+           </button>
+        </div>
+     );
+  }
+
   if (!dataLoaded) {
      return <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-500 font-black tracking-[0.2em]">LOADING SAVE DATA...</div>;
   }
@@ -925,14 +978,14 @@ export default function App() {
       {/* Rulebook Modal */}
       {showRules && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-stone-900 border-2 border-amber-500 p-8 rounded-[2rem] max-w-2xl w-full shadow-[0_0_50px_rgba(245,158,11,0.2)] relative">
+          <div className="bg-stone-900 border-2 border-amber-500 p-8 rounded-[2rem] max-w-2xl w-full shadow-[0_0_50px_rgba(245,158,11,0.2)] relative max-h-[90vh] overflow-y-auto custom-scrollbar">
              <button onClick={() => setShowRules(false)} className="absolute top-4 right-6 text-2xl font-black text-stone-500 hover:text-white transition-colors">X</button>
              <h2 className="text-3xl font-black text-amber-500 mb-6 tracking-widest flex items-center gap-3"><BookOpen /> HOW TO PLAY</h2>
              <ul className="space-y-4 text-stone-300 text-lg">
                 <li><span className="text-amber-500 font-bold">1. Setup:</span> Draw 7 cards. Play a Basic Character to the Active slot.</li>
                 <li><span className="text-amber-500 font-bold">2. The Turn:</span> You <strong className="text-white">must DRAW a card</strong> by clicking your deck at the start of every turn.</li>
                 <li><span className="text-amber-500 font-bold">3. Energy:</span> You can attach <strong className="text-white">ONE Energy card per turn</strong> to your Active <em className="text-white">OR Benched</em> characters.</li>
-                <li><span className="text-amber-500 font-bold">4. Bench:</span> You can have up to 5 characters on your bench.</li>
+                <li><span className="text-amber-500 font-bold">4. Bench:</span> You can have up to 5 characters on your bench. Click a benched character to promote it if your active spot is empty.</li>
                 <li><span className="text-amber-500 font-bold">5. Attacking:</span> Attacking requires at least 1 Energy. It deals damage and automatically ends your turn.</li>
                 <li><span className="text-amber-500 font-bold">6. Prizes & GX Rule:</span> Knock out an enemy to take 1 Prize Card. But beware—knocking out a <strong className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-yellow-400">GX Character</strong> gives <strong className="text-white">2 Prize Cards!</strong></li>
                 <li><span className="text-amber-500 font-bold">7. Winning:</span> Take all 3 of your Prize Cards, or outlast your opponent so they run out of cards to draw.</li>
@@ -971,11 +1024,16 @@ export default function App() {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3 bg-stone-950 px-3 sm:px-6 py-2 sm:py-2.5 rounded-full border border-amber-900/50 shadow-[0_0_20px_rgba(245,158,11,0.15)] mr-1 sm:mr-2">
-          <button onClick={() => setShowRules(true)} className="text-amber-500 hover:text-amber-300 transition-colors mr-2 hidden sm:block" title="How to Play">
+          <button onClick={() => setShowRules(true)} className="text-amber-500 hover:text-amber-300 transition-colors hidden sm:block" title="How to Play">
              <BookOpen className="w-5 h-5" />
           </button>
+          <div className="w-px h-6 bg-stone-800 mx-1 hidden sm:block"></div>
           <Coins className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
           <span className="font-bold text-amber-400 font-mono text-sm sm:text-lg">{coins.toLocaleString()}</span>
+          <div className="w-px h-6 bg-stone-800 mx-1"></div>
+          <button onClick={handleLogout} className="text-stone-500 hover:text-rose-500 transition-colors" title="Sign Out">
+             <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
         </div>
       </nav>
 
