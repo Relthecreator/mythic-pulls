@@ -8,7 +8,7 @@ import {
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
 
 // --- GAME DATA & CONFIGURATION ---
 
@@ -172,6 +172,14 @@ STARTER_DECK.forEach(id => {
 });
 
 // --- HELPER LOGIC ---
+
+// Ensure we strictly follow the mandated paths to avoid 7-segment or permission errors
+// Add .replace(/\//g, '_') to scrub any slashes out of the app ID!
+const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-live';
+
+const getMatchesCol = (db) => collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+const getSaveDocRef = (db, uid) => doc(db, 'artifacts', appId, 'users', uid, 'savedata', 'game');
+
 const rollRarity = (dropRates) => {
   const roll = Math.random();
   let cumulative = 0;
@@ -777,6 +785,371 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
 };
 
 
+// --- ONLINE BATTLE ARENA COMPONENT ---
+const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, setDbError }) => {
+  const [matchId, setMatchId] = useState(null);
+  const [matchData, setMatchData] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedHandCard, setSelectedHandCard] = useState(null);
+
+  const createBattleDeck = (idArray) => {
+    const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
+    return shuffle(idArray).map(id => {
+      const base = CHARACTERS.find(c => c.id === id);
+      return { ...base, instanceId: Math.random().toString(36).substr(2, 9), currentHp: base.hp, attachedEnergy: 0 };
+    });
+  };
+
+  const initializePlayerState = (deckIds) => {
+    let pDeck, pHand;
+    let playerHasBasic = false;
+    let attempts = 0;
+    while (!playerHasBasic && attempts < 15) {
+       pDeck = createBattleDeck(deckIds);
+       pHand = pDeck.slice(0, 7);
+       pDeck = pDeck.slice(7);
+       if (pHand.some(c => !c.isEnergy)) playerHasBasic = true;
+       attempts++;
+    }
+    return { deck: pDeck, hand: pHand, bench: [], active: null, prizes: 3, energyAttachedThisTurn: false, hasDrawnThisTurn: false };
+  };
+
+  const findMatch = async () => {
+    setIsSearching(true);
+    try {
+        const matchesCol = getMatchesCol(db);
+        const snap = await getDocs(matchesCol); 
+        const waitingMatches = snap.docs.filter(d => d.data().status === 'waiting' && d.data().hostId !== user.uid);
+        
+        if (waitingMatches.length > 0) {
+            const matchDoc = waitingMatches[0];
+            await updateDoc(doc(matchesCol, matchDoc.id), {
+                guestId: user.uid,
+                status: 'playing',
+                [`players.${user.uid}`]: initializePlayerState(playerDeckIds),
+                log: [...matchDoc.data().log, "A Challenger appeared!"]
+            });
+            setMatchId(matchDoc.id);
+        } else {
+            const newMatchRef = doc(matchesCol);
+            await setDoc(newMatchRef, {
+                hostId: user.uid,
+                guestId: null,
+                status: 'waiting',
+                turn: user.uid,
+                players: { [user.uid]: initializePlayerState(playerDeckIds) },
+                log: ["Waiting for opponent..."],
+                winner: null
+            });
+            setMatchId(newMatchRef.id);
+        }
+    } catch(e) { 
+        console.error("Matchmaking Error:", e); 
+        setIsSearching(false); 
+        if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+            setDbError(true);
+        } else {
+            alert("Matchmaking failed."); 
+        }
+    }
+  };
+
+  useEffect(() => {
+    if (!matchId) return;
+    const unsub = onSnapshot(doc(getMatchesCol(db), matchId), (snap) => {
+        if (snap.exists()) {
+            setMatchData(snap.data());
+        } else {
+            setMatchData(null);
+            setMatchId(null);
+            setIsSearching(false);
+            alert("Match ended abruptly.");
+        }
+    }, (err) => console.error(err));
+    return () => unsub();
+  }, [matchId, db]);
+
+  const updateMatch = async (updates) => {
+     try {
+         await updateDoc(doc(getMatchesCol(db), matchId), updates);
+     } catch (e) { console.error("Sync failed", e); }
+  };
+
+  if (!matchId) {
+     return (
+        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+           <Zap className="w-24 h-24 text-fuchsia-500 drop-shadow-[0_0_20px_rgba(217,70,239,0.5)]" />
+           <h2 className="text-4xl font-black tracking-widest text-white">ONLINE ARENA</h2>
+           <p className="text-stone-400">Battle real players. Win 1,000 Coins.</p>
+           <button onClick={findMatch} disabled={isSearching} className="mt-4 px-10 py-4 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-full font-black tracking-widest text-white transition-all shadow-[0_0_30px_rgba(192,38,211,0.4)] disabled:opacity-50 hover:scale-105">
+              {isSearching ? 'SEARCHING...' : 'FIND MATCH'}
+           </button>
+        </div>
+     );
+  }
+
+  if (matchData?.status === 'waiting') {
+     return (
+        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+           <Sparkles className="w-16 h-16 text-fuchsia-500 animate-spin" />
+           <h2 className="text-3xl font-black tracking-widest text-white animate-pulse">WAITING FOR CHALLENGER...</h2>
+        </div>
+     );
+  }
+
+  if (!matchData?.players || !matchData.players[user.uid]) return null;
+
+  const me = matchData.players[user.uid];
+  const opponentId = matchData.hostId === user.uid ? matchData.guestId : matchData.hostId;
+  const opponent = opponentId ? matchData.players[opponentId] : null;
+  const isMyTurn = matchData.turn === user.uid && matchData.status === 'playing';
+
+  const handleDraw = async () => {
+    if (!isMyTurn || me.hasDrawnThisTurn) return;
+    if (me.deck.length === 0) {
+        await updateMatch({ winner: opponentId, status: 'gameover', log: [...matchData.log, "Player ran out of cards!"].slice(-10) });
+        return;
+    }
+    const newDeck = [...me.deck];
+    const drawnCard = newDeck.pop();
+    await updateMatch({
+        [`players.${user.uid}.deck`]: newDeck,
+        [`players.${user.uid}.hand`]: [...me.hand, drawnCard],
+        [`players.${user.uid}.hasDrawnThisTurn`]: true,
+        log: [...matchData.log, "Opponent drew a card."].slice(-10)
+    });
+  };
+
+  const handlePlayAreaClick = async (area, benchIndex = null) => {
+    if (!selectedHandCard || !isMyTurn) return;
+    const { card, index } = selectedHandCard;
+
+    if (area === 'active' && !me.active && !card.isEnergy) {
+       const newHand = [...me.hand];
+       newHand.splice(index, 1);
+       await updateMatch({
+           [`players.${user.uid}.hand`]: newHand,
+           [`players.${user.uid}.active`]: card,
+           log: [...matchData.log, `Opponent played ${card.name} to Active.`].slice(-10)
+       });
+       setSelectedHandCard(null);
+    } 
+    else if (area === 'bench' && me.bench.length < 5 && !card.isEnergy) {
+       const newHand = [...me.hand];
+       newHand.splice(index, 1);
+       await updateMatch({
+           [`players.${user.uid}.hand`]: newHand,
+           [`players.${user.uid}.bench`]: [...me.bench, card],
+           log: [...matchData.log, `Opponent played ${card.name} to Bench.`].slice(-10)
+       });
+       setSelectedHandCard(null);
+    }
+    else if (area === 'active' && card.isEnergy && me.active && !me.energyAttachedThisTurn && isMyTurn) {
+       const newHand = [...me.hand];
+       newHand.splice(index, 1);
+       await updateMatch({
+           [`players.${user.uid}.hand`]: newHand,
+           [`players.${user.uid}.active.attachedEnergy`]: me.active.attachedEnergy + 1,
+           [`players.${user.uid}.energyAttachedThisTurn`]: true,
+           log: [...matchData.log, `Opponent attached Energy.`].slice(-10)
+       });
+       setSelectedHandCard(null);
+    }
+    else if (area === 'benchCard' && card.isEnergy && benchIndex !== null && !me.energyAttachedThisTurn && isMyTurn) {
+       const newHand = [...me.hand];
+       newHand.splice(index, 1);
+       const newBench = [...me.bench];
+       newBench[benchIndex].attachedEnergy += 1;
+       await updateMatch({
+           [`players.${user.uid}.hand`]: newHand,
+           [`players.${user.uid}.bench`]: newBench,
+           [`players.${user.uid}.energyAttachedThisTurn`]: true,
+           log: [...matchData.log, `Opponent attached Energy to bench.`].slice(-10)
+       });
+       setSelectedHandCard(null);
+    }
+  };
+
+  const handleBenchPromote = async (benchIndex) => {
+    if (!isMyTurn || me.active) return;
+    const newBench = [...me.bench];
+    const promoted = newBench.splice(benchIndex, 1)[0];
+    await updateMatch({
+        [`players.${user.uid}.bench`]: newBench,
+        [`players.${user.uid}.active`]: promoted,
+        log: [...matchData.log, `Opponent promoted ${promoted.name} to Active.`].slice(-10)
+    });
+  };
+
+  const handleAttack = async () => {
+    if (!isMyTurn || !me.active || !opponent?.active) return;
+    if (!me.hasDrawnThisTurn) { alert("You must DRAW first!"); return; }
+    if (me.active.attachedEnergy < 1) { alert("Need Energy!"); return; }
+
+    const newOppHp = opponent.active.currentHp - me.active.dmg;
+    let logMsg = `Opponent's ${me.active.name} attacked for ${me.active.dmg}!`;
+    let updates = {
+       [`players.${opponentId}.active.currentHp`]: newOppHp,
+       turn: opponentId,
+       [`players.${user.uid}.energyAttachedThisTurn`]: false,
+       [`players.${user.uid}.hasDrawnThisTurn`]: false
+    };
+
+    if (newOppHp <= 0) {
+       const prizesToTake = opponent.active.rarity === 'GX' ? 2 : 1;
+       const newPrizes = me.prizes - prizesToTake;
+       logMsg += ` ${opponent.active.name} fainted!`;
+       updates[`players.${opponentId}.active`] = null;
+       updates[`players.${user.uid}.prizes`] = newPrizes;
+       
+       if (newPrizes <= 0) {
+          updates.winner = user.uid;
+          updates.status = 'gameover';
+       }
+    }
+    updates.log = [...matchData.log, logMsg].slice(-10);
+    await updateMatch(updates);
+  };
+
+  const passTurn = async () => {
+    if (!isMyTurn || !me.hasDrawnThisTurn) { alert("Draw a card first!"); return; }
+    await updateMatch({
+        turn: opponentId,
+        [`players.${user.uid}.energyAttachedThisTurn`]: false,
+        [`players.${user.uid}.hasDrawnThisTurn`]: false,
+        log: [...matchData.log, "Opponent passed their turn."].slice(-10)
+    });
+  };
+
+  const leaveMatch = async () => {
+     if (matchData.status === 'playing') {
+         await updateMatch({ winner: opponentId, status: 'gameover' });
+     } else {
+         await deleteDoc(doc(getMatchesCol(db), matchId));
+     }
+     setMatchId(null);
+     onExit();
+  };
+
+  if (matchData.status === 'gameover') {
+    const isWinner = matchData.winner === user.uid;
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center animate-in zoom-in-95 duration-500">
+         <h2 className={`text-6xl font-black mb-8 tracking-[0.3em] drop-shadow-2xl ${isWinner ? 'text-fuchsia-400' : 'text-stone-500'}`}>
+           {isWinner ? 'ONLINE VICTORY' : 'DEFEAT'}
+         </h2>
+         <p className="text-xl text-stone-300 mb-12">
+           {isWinner ? 'You proved your dominance! +1000 Coins' : 'You were outmatched. +100 Coins'}
+         </p>
+         <button onClick={() => { isWinner ? onWin() : onLose(); leaveMatch(); }} className="px-12 py-4 bg-fuchsia-600 text-white font-black tracking-widest rounded-full hover:bg-fuchsia-500 shadow-2xl">
+            COLLECT REWARD
+         </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col bg-stone-900 border-4 border-fuchsia-900/50 rounded-[2rem] overflow-y-auto shadow-2xl max-h-[85vh] custom-scrollbar relative">
+      <button onClick={leaveMatch} className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-1 bg-red-600/80 text-white text-xs font-bold rounded-full hover:bg-red-500">FORFEIT</button>
+
+      {/* OPPONENT SIDE */}
+      <div className="flex-1 min-h-[280px] shrink-0 bg-stone-950/80 border-b border-stone-800 p-4 flex flex-col relative">
+         <div className="absolute top-4 left-4 flex gap-4">
+            <div className="w-10 sm:w-12 aspect-[2.5/3.6] bg-gradient-to-br from-fuchsia-900/40 to-black border-2 border-stone-600 rounded flex flex-col items-center justify-center shadow-md">
+               <Layers className="w-4 h-4 text-fuchsia-500/50" />
+               <span className="text-stone-400 font-black text-[0.6rem] mt-1">{opponent?.deck?.length || 0}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+               <span className="text-stone-500 font-bold text-[0.6rem] uppercase">Prizes</span>
+               <div className="flex gap-1">
+                  {[...Array(Math.max(0, opponent?.prizes || 0))].map((_, i) => <div key={i} className="w-6 h-10 bg-fuchsia-600/50 border border-fuchsia-500 rounded shadow-md backface-hidden"></div>)}
+               </div>
+            </div>
+         </div>
+         <div className="absolute top-4 right-4 flex gap-1">
+            <span className="text-stone-500 font-bold text-xs uppercase mr-2 mt-1">Opp Hand</span>
+            {[...Array(Math.min(opponent?.hand?.length || 0, 5))].map((_, i) => <div key={i} className="w-6 h-10 bg-stone-700 rounded border border-stone-600 shadow-sm"></div>)}
+         </div>
+
+         <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="flex gap-2 mb-4 h-24">
+               {[...Array(5)].map((_, i) => (
+                 <div key={i} className="w-16 h-24 border-2 border-stone-800 rounded-lg flex items-center justify-center bg-stone-900/50">
+                    {opponent?.bench?.[i] && <TCGCard card={opponent.bench[i]} size="mini" inBattle={true} />}
+                 </div>
+               ))}
+            </div>
+            <div className="w-28 h-40 border-2 border-fuchsia-900/50 rounded-xl flex items-center justify-center bg-stone-950 shadow-[0_0_20px_rgba(192,38,211,0.1)]">
+               {opponent?.active ? <TCGCard card={opponent.active} size="small" inBattle={true} /> : <span className="text-stone-700 text-xs text-center">WAITING ON OPPONENT</span>}
+            </div>
+         </div>
+      </div>
+
+      {/* MIDFIELD */}
+      <div className="h-16 shrink-0 bg-stone-800 flex justify-between items-center px-6 border-y-2 border-stone-950 shadow-inner z-10">
+         <div className="flex items-center space-x-3 text-sm">
+           <span className={`px-3 py-1 rounded font-black tracking-widest text-xs ${isMyTurn ? 'bg-fuchsia-500 text-white shadow-[0_0_10px_rgba(217,70,239,0.8)]' : 'bg-stone-700 text-stone-400'}`}>YOUR TURN</span>
+           <span className={`px-3 py-1 rounded font-black tracking-widest text-xs ${!isMyTurn ? 'bg-red-500 text-white' : 'bg-stone-700 text-stone-400'}`}>OPP TURN</span>
+         </div>
+         <div className="text-stone-300 font-mono text-xs w-1/3 truncate text-center">
+            &gt; {matchData.log[matchData.log.length - 1]}
+         </div>
+         <div className="flex space-x-2">
+           <button onClick={handleDraw} disabled={!isMyTurn || me.hasDrawnThisTurn} className="px-4 sm:px-6 py-1.5 bg-blue-600 disabled:bg-stone-700 text-white font-black rounded-lg shadow-md hover:bg-blue-500 flex items-center gap-2 text-xs sm:text-base"><Layers className="w-4 h-4" /> DRAW</button>
+           <button onClick={handleAttack} disabled={!isMyTurn || !me.active || me.active.attachedEnergy < 1 || !me.hasDrawnThisTurn} className="px-4 sm:px-6 py-1.5 bg-rose-600 disabled:bg-stone-700 text-white font-black rounded-lg shadow-md hover:bg-rose-500 flex items-center gap-2 text-xs sm:text-base"><Swords className="w-4 h-4" /> ATTACK</button>
+           <button onClick={passTurn} disabled={!isMyTurn || !me.hasDrawnThisTurn} className="px-4 sm:px-6 py-1.5 bg-stone-600 disabled:bg-stone-700 text-white font-bold rounded-lg hover:bg-stone-500 text-xs sm:text-base">PASS</button>
+         </div>
+      </div>
+
+      {/* PLAYER SIDE */}
+      <div className="flex-[1.5] min-h-[420px] shrink-0 bg-stone-900 p-4 flex flex-col justify-between relative">
+         <div className="absolute bottom-4 left-4 flex flex-col items-center">
+            <div className={`w-14 sm:w-20 aspect-[2.5/3.6] bg-gradient-to-br from-fuchsia-900/60 to-black border-4 border-fuchsia-600/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:-translate-y-2 transition-transform shadow-xl ${isMyTurn && !me.hasDrawnThisTurn ? 'ring-4 ring-blue-500 animate-pulse' : ''}`} onClick={handleDraw}>
+               <Layers className="w-6 h-6 sm:w-8 sm:h-8 text-fuchsia-500 opacity-50" />
+               <span className="text-stone-400 font-black text-[0.6rem] sm:text-xs mt-1">{me.deck.length}</span>
+            </div>
+            <span className="text-stone-500 text-[0.6rem] font-bold mt-1 uppercase">Deck (Click)</span>
+         </div>
+         <div className="absolute bottom-4 right-4 flex flex-col items-end">
+            <span className="text-fuchsia-500 font-bold text-xs uppercase mb-1">Prizes</span>
+            <div className="flex gap-1">
+               {[...Array(Math.max(0, me.prizes))].map((_, i) => <div key={i} className="w-8 h-12 bg-fuchsia-600 border border-fuchsia-400 rounded shadow-[0_0_10px_rgba(217,70,239,0.5)]"></div>)}
+            </div>
+         </div>
+         
+         <div className="flex-1 flex flex-col items-center justify-start mt-2">
+            <div 
+               className={`w-28 h-40 border-2 rounded-xl flex items-center justify-center shadow-2xl mb-4 transition-colors cursor-pointer ${!me.active && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-fuchsia-400 bg-fuchsia-900/20' : me.active && selectedHandCard?.card.isEnergy && !me.energyAttachedThisTurn ? 'border-emerald-400 bg-emerald-900/20' : 'border-stone-700 bg-stone-950'}`}
+               onClick={() => handlePlayAreaClick('active')}
+            >
+               {me.active ? <TCGCard card={me.active} size="small" inBattle={true} /> : <span className="text-stone-600 text-xs font-bold text-center p-2 uppercase">Play Active</span>}
+            </div>
+            <div className="flex gap-2 h-24">
+               {[...Array(5)].map((_, i) => (
+                 <div 
+                   key={i} 
+                   className={`w-16 h-24 border-2 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${!me.bench[i] && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-fuchsia-400/50 bg-fuchsia-900/10' : me.bench[i] && selectedHandCard?.card.isEnergy && !me.energyAttachedThisTurn ? 'border-emerald-400 bg-emerald-900/20' : 'border-stone-800 bg-stone-900/50'}`}
+                   onClick={() => me.bench[i] && selectedHandCard?.card.isEnergy ? handlePlayAreaClick('benchCard', i) : me.bench[i] ? handleBenchPromote(i) : handlePlayAreaClick('bench')}
+                 >
+                    {me.bench[i] ? <TCGCard card={me.bench[i]} size="mini" inBattle={true} /> : null}
+                 </div>
+               ))}
+            </div>
+         </div>
+         <div className="h-32 shrink-0 flex justify-center items-end pb-2 mt-4">
+            {me.hand.map((card, idx) => (
+               <div key={card.instanceId} className="w-24 sm:w-28 transition-transform duration-200 hover:-translate-y-4" style={{ marginLeft: idx === 0 ? 0 : '-1.5rem', zIndex: idx }}>
+                 <TCGCard card={card} size="small" isFlipped={true} isSelected={selectedHandCard?.index === idx} onClick={() => setSelectedHandCard(selectedHandCard?.index === idx ? null : { card, index: idx })} />
+               </div>
+            ))}
+            {me.hand.length === 0 && <span className="text-stone-600 italic">Hand is empty</span>}
+         </div>
+      </div>
+    </div>
+  );
+};
+
+
 // --- MAIN APP COMPONENT ---
 export default function App() {
   const [coins, setCoins] = useState(2500);
@@ -790,8 +1163,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [db, setDb] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [dbError, setDbError] = useState(false);
 
-  // Initialize Firebase Safely
   useEffect(() => {
     try {
       const isGitHub = typeof __firebase_config === 'undefined';
@@ -818,7 +1191,6 @@ export default function App() {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else if (isGitHub) {
-           // We are on GitHub! Show the login screen instead of anonymous login.
            setShowLogin(true);
         } else {
           await signInAnonymously(auth);
@@ -848,7 +1220,6 @@ export default function App() {
         await signInWithPopup(auth, provider);
      } catch (e) {
         console.error(e);
-        // Changed this line to print out the exact Firebase error message
         alert("Login failed!\n\nError Details: " + e.message + "\n\nMake sure you added 'relthecreator.github.io' to your Authorized Domains in the Firebase Console!");
      }
   };
@@ -859,13 +1230,11 @@ export default function App() {
      setShowLogin(true);
   };
 
-  // Load Data
   useEffect(() => {
     if (!user || !db) return;
     const loadData = async () => {
        try {
-          const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-live';
-          const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'savedata', 'game');
+          const docRef = getSaveDocRef(db, user.uid);
           const snap = await getDoc(docRef);
           if (snap.exists()) {
              const data = snap.data();
@@ -873,25 +1242,33 @@ export default function App() {
              if (data.collection) setCollection(data.collection);
              if (data.deck) setDeck(data.deck);
           }
-       } catch(e) { console.error(e); }
+       } catch(e) { 
+           console.error("Load Data Error:", e);
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+               setDbError(true);
+           }
+       }
        setDataLoaded(true);
     };
     loadData();
   }, [user, db]);
 
-  // Save Data
   useEffect(() => {
-     if (dataLoaded && user && db) {
+     if (dataLoaded && user && db && !dbError) {
         const saveData = async () => {
            try {
-              const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-live';
-              const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'savedata', 'game');
+              const docRef = getSaveDocRef(db, user.uid);
               await setDoc(docRef, { coins, collection, deck });
-           } catch(e) { console.error(e); }
+           } catch(e) { 
+               console.error("Save Data Error:", e); 
+               if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+                   setDbError(true);
+               }
+           }
         };
         saveData();
      }
-  }, [coins, collection, deck, dataLoaded, user, db]);
+  }, [coins, collection, deck, dataLoaded, user, db, dbError]);
 
   
   const [currentCards, setCurrentCards] = useState([]);
@@ -949,6 +1326,39 @@ export default function App() {
   };
 
   // --- RENDERING SCREENS ---
+
+  if (dbError) {
+      return (
+         <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center text-white p-8 text-center overflow-y-auto">
+            <AlertCircle className="w-24 h-24 text-rose-500 mb-6" />
+            <h1 className="text-4xl font-black text-rose-500 mb-4">DATABASE LOCKED!</h1>
+            <p className="text-xl text-stone-300 max-w-2xl mb-8">
+               Your Firebase Database is currently blocking the game from saving or matching players. You need to update your Firestore Security Rules.
+            </p>
+            <div className="bg-stone-900 border-2 border-stone-700 p-6 rounded-2xl text-left max-w-2xl shadow-2xl">
+               <h3 className="text-amber-500 font-bold mb-4 text-xl tracking-widest">HOW TO UNLOCK IT:</h3>
+               <ol className="list-decimal pl-5 text-stone-300 space-y-4 font-medium">
+                  <li>Go to your <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 underline font-black">Firebase Console</a>.</li>
+                  <li>Click on <strong>Firestore Database</strong> in the left-hand menu.</li>
+                  <li>Click the <strong>Rules</strong> tab at the top of the database screen.</li>
+                  <li>Delete the code in there, and paste exactly this code:</li>
+                  <pre className="bg-black p-4 mt-2 rounded-xl text-emerald-400 font-mono text-sm sm:text-base border border-stone-800">
+{`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}`}
+                  </pre>
+                  <li>Click the blue <strong>Publish</strong> button.</li>
+                  <li>Come back here and refresh this page!</li>
+               </ol>
+            </div>
+         </div>
+      );
+  }
 
   if (showLogin && !user) {
      return (
@@ -1021,6 +1431,9 @@ export default function App() {
           </button>
           <button onClick={() => setActiveTab('battle')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'battle' ? 'bg-rose-600 text-white shadow-[0_0_20px_rgba(225,29,72,0.5)]' : 'text-stone-400 hover:text-rose-400 hover:bg-stone-800'}`}>
             <Crosshair className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">BATTLE</span>
+          </button>
+          <button onClick={() => setActiveTab('online')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-fuchsia-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.5)]' : 'text-stone-400 hover:text-fuchsia-400 hover:bg-stone-800'}`}>
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">ONLINE</span>
           </button>
         </div>
 
@@ -1254,6 +1667,30 @@ export default function App() {
                   onWin={() => setCoins(c => c + 500)} 
                   onLose={() => setCoins(c => c + 50)} 
                   onExit={() => setActiveTab('shop')} 
+                />
+             )}
+          </div>
+        )}
+
+        {/* ONLINE BATTLE VIEW */}
+        {activeTab === 'online' && (
+          <div className="animate-in fade-in duration-500 flex-1 flex flex-col">
+             {deck.length < 30 ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-6">
+                   <ShieldAlert className="w-24 h-24 text-fuchsia-500/50 animate-pulse" />
+                   <h2 className="text-4xl font-black tracking-widest text-white">DECK INCOMPLETE</h2>
+                   <p className="text-stone-400">You need exactly 30 cards in your deck to play online.</p>
+                   <button onClick={() => setActiveTab('deck')} className="mt-4 px-8 py-3 bg-stone-800 hover:bg-stone-700 rounded-full font-bold text-white transition-colors">Go to Deck Builder</button>
+                </div>
+             ) : (
+                <OnlineBattleArena 
+                  playerDeckIds={deck} 
+                  onWin={() => setCoins(c => c + 1000)} 
+                  onLose={() => setCoins(c => c + 100)} 
+                  onExit={() => setActiveTab('shop')} 
+                  user={user}
+                  db={db}
+                  setDbError={setDbError}
                 />
              )}
           </div>
