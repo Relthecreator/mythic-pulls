@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen, UserCircle
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -216,6 +216,18 @@ const STARTER_DECK = [
   'r9', 'r9'
 ];
 
+const AVATARS = [
+    "https://api.dicebear.com/9.x/adventurer/svg?seed=Felix",
+    "https://api.dicebear.com/9.x/adventurer/svg?seed=Aneka",
+    "https://api.dicebear.com/9.x/adventurer/svg?seed=Bandit",
+    "https://api.dicebear.com/9.x/bottts/svg?seed=Caleb",
+    "https://api.dicebear.com/9.x/bottts/svg?seed=Destiny",
+    "https://api.dicebear.com/9.x/lorelei/svg?seed=Eden",
+    "https://api.dicebear.com/9.x/fun-emoji/svg?seed=Fluffy",
+    "https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=Midnight",
+    "https://api.dicebear.com/9.x/avataaars/svg?seed=Jack"
+  ];
+
 const INITIAL_COLLECTION = {};
 STARTER_DECK.forEach(id => {
   INITIAL_COLLECTION[id] = (INITIAL_COLLECTION[id] || 0) + 1;
@@ -294,133 +306,305 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// --- COMPONENTS ---
+// --- ACCOUNT SETUP COMPONENT ---
+const ProfileSetup = ({ onComplete, user, db }) => {
+    const [username, setUsername] = useState('');
+    const [avatar, setAvatar] = useState(AVATARS[0]);
+    const [error, setError] = useState('');
+    const [isChecking, setIsChecking] = useState(false);
 
-const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = false, isSelected = false }) => {
-  if (!card) return null;
-  const rarityStyle = RARITIES[card.rarity || 'Common'];
-  const elementStyle = ELEMENTS[card.element || 'Water'];
-  const ElementIcon = elementStyle?.icon || CircleDashed;
-  
-  let dims = '';
-  let padding = '';
-  let iconSize = '';
-  let elementIconSize = '';
+    const handleSubmit = async () => {
+        const trimmed = username.trim();
+        if (trimmed.length < 3 || trimmed.length > 16) {
+            setError('Username must be 3-16 characters.');
+            return;
+        }
+        const lowerUsername = trimmed.toLowerCase();
+        if (/[^a-z0-9_]/.test(lowerUsername)) {
+            setError('Only letters, numbers, and underscores allowed.');
+            return;
+        }
 
-  if (size === 'large') {
-    dims = 'w-72 h-[29rem] sm:w-[24rem] sm:h-[36rem] text-base';
-    padding = 'p-3 sm:p-5'; iconSize = 'w-48 h-48'; elementIconSize = 'w-8 h-8';
-  } else if (size === 'small') {
-    dims = 'w-full aspect-[2.5/3.6] text-[0.6rem] sm:text-xs';
-    padding = 'p-2'; iconSize = 'w-16 h-16'; elementIconSize = 'w-3 h-3';
-  } else if (size === 'mini') {
-    dims = 'w-16 sm:w-20 lg:w-24 aspect-[2.5/3.6] text-[0.4rem]';
-    padding = 'p-1'; iconSize = 'w-8 h-8'; elementIconSize = 'w-2 h-2 hidden sm:block';
-  }
+        setIsChecking(true);
+        try {
+            // FIX: Removed strict block. If the canvas reloads, it just safely overwrites it.
+            const usernameRef = doc(db, 'artifacts', appId, 'public', 'data', 'usernames', lowerUsername);
+            await setDoc(usernameRef, { uid: user.uid, original: trimmed });
+            onComplete({ username: trimmed, avatar });
+        } catch (e) {
+            console.error("Username check failed", e);
+            if (e.message?.toLowerCase().includes('permission')) {
+                setError('Database locked! Ask Admin to update security rules.');
+            } else {
+                setError('Failed to verify username. Check connection.');
+            }
+            setIsChecking(false);
+        }
+    };
 
-  if (card.isMassive && size === 'large') dims += ' scale-110';
-
-  const selectionRing = isSelected ? 'ring-4 ring-amber-400 ring-offset-2 ring-offset-slate-900 scale-105 shadow-[0_0_30px_rgba(245,158,11,0.4)]' : '';
-  const massiveGlow = card.isMassive ? 'shadow-[0_0_40px_rgba(234,179,8,0.6)] border-yellow-400' : '';
-
-  if (card.isEnergy) {
     return (
-      <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
-        <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d shadow-2xl rounded-3xl ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
-          <div className={`absolute w-full h-full backface-hidden rounded-3xl border-2 sm:border-[4px] border-slate-700 bg-gradient-to-br ${elementStyle.artBg} flex flex-col items-center justify-between py-4 sm:py-8 shadow-inner overflow-hidden`} style={{ backfaceVisibility: 'hidden' }}>
-             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-             {size !== 'mini' && <h3 className={`font-black uppercase tracking-[0.3em] text-white/90 drop-shadow-md ${size === 'large' ? 'text-3xl mt-4' : 'text-[0.65rem] sm:text-xs'}`}>ENERGY</h3>}
-             <div className={`bg-white/10 p-3 sm:p-8 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.2)] backdrop-blur-xl border border-white/20 group-hover:scale-110 group-hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] transition-all duration-500`}>
-                <ElementIcon className={`${size === 'large' ? 'w-32 h-32' : size === 'small' ? 'w-10 h-10' : 'w-6 h-6'} text-white drop-shadow-lg`} />
-             </div>
-             {size !== 'mini' && <h4 className={`font-black uppercase tracking-[0.4em] text-white/80 drop-shadow-md mb-2 ${size === 'large' ? 'text-2xl' : 'text-[0.55rem] sm:text-[0.65rem]'}`}>{card.element}</h4>}
-          </div>
-          <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-black border-2 sm:border-[4px] border-slate-700/50 rounded-3xl flex items-center justify-center shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-             <Layers className={`${size === 'large' ? 'w-24 h-24' : 'w-6 h-6 sm:w-10 sm:h-10'} text-amber-500 drop-shadow-md`} />
-          </div>
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-[2rem] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-500 flex flex-col items-center text-center">
+                <UserCircle className="w-16 h-16 text-blue-500 mb-4" />
+                <h2 className="text-3xl font-black text-white tracking-widest mb-2">CREATE PROFILE</h2>
+                <p className="text-slate-400 mb-8 font-medium">Choose how you'll appear to other players online.</p>
+
+                {/* Avatar Selection */}
+                <div className="w-full mb-8">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Select Avatar</label>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        {AVATARS.map((url, i) => (
+                            <img 
+                                key={i} 
+                                src={url} 
+                                alt="avatar option" 
+                                className={`w-14 h-14 rounded-full cursor-pointer transition-all ${avatar === url ? 'ring-4 ring-blue-500 scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'opacity-50 hover:opacity-100'}`}
+                                onClick={() => setAvatar(url)}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Username Input */}
+                <div className="w-full mb-8 text-left">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Username</label>
+                    <input 
+                        type="text" 
+                        value={username} 
+                        onChange={(e) => { setUsername(e.target.value); setError(''); }} 
+                        placeholder="Enter username" 
+                        maxLength={16}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 transition-colors text-center font-bold text-lg tracking-wide"
+                    />
+                    {error && <p className="text-rose-500 text-xs font-bold mt-2 text-center">{error}</p>}
+                </div>
+
+                <button onClick={handleSubmit} disabled={isChecking} className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black tracking-widest rounded-xl shadow-lg transition-all hover:scale-105">
+                    {isChecking ? 'CHECKING...' : 'COMPLETE SETUP'}
+                </button>
+            </div>
         </div>
-      </div>
     );
-  }
+};
 
-  return (
-    <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
-      
-      {/* MASSIVE BADGE */}
-      {card.isMassive && isFlipped && (
-          <div className="absolute -top-3 -right-3 z-50 bg-gradient-to-r from-yellow-400 via-rose-500 to-fuchsia-500 text-white font-black px-3 py-1 rounded-full border-2 border-white transform rotate-12 shadow-[0_0_20px_rgba(244,63,94,0.8)] animate-pulse uppercase tracking-widest text-[0.6rem] sm:text-xs">
-              MASSIVE
-          </div>
-      )}
+// --- COMPONENTS ---
+// --- GLOBAL TRADE HUB COMPONENT ---
+const TradeHub = ({ user, db, collection: myCollection, setCollection, showToast, setDbError, profile }) => {
+   const [openTrades, setOpenTrades] = useState([]);
+   const [offerCardId, setOfferCardId] = useState('');
+   const [reqCardId, setReqCardId] = useState('');
+   const [isPosting, setIsPosting] = useState(false);
 
-      <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d rounded-3xl ${massiveGlow} ${card.isMassive && isFlipped ? 'shadow-[0_0_40px_rgba(234,179,8,0.6)]' : 'shadow-2xl'} ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
-        
-        {/* Front */}
-        <div className={`absolute w-full h-full backface-hidden rounded-3xl ${rarityStyle.outerBg} p-[2px] sm:p-1 ${card.isMassive ? 'bg-gradient-to-br from-yellow-400 via-red-500 to-fuchsia-500' : ''}`} style={{ backfaceVisibility: 'hidden' }}>
-          <div className={`relative w-full h-full rounded-[1.3rem] sm:rounded-[1.6rem] bg-gradient-to-br ${rarityStyle.bg} flex flex-col overflow-hidden border border-white/10 ${card.isMassive ? 'border-yellow-200/50' : ''}`}>
-            {rarityStyle.foil && <div className={`absolute inset-0 z-20 pointer-events-none mix-blend-overlay opacity-60 ${rarityStyle.foil}`}></div>}
-            {card.isMassive && <div className="absolute inset-0 z-20 pointer-events-none mix-blend-color-dodge bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-50 animate-pulse-slow"></div>}
+   // Listen for global open trades
+   useEffect(() => {
+       if (!user || !db) return;
+       const unsub = onSnapshot(getTradesCol(db), (snap) => {
+           const open = [];
+           snap.docs.forEach(d => {
+               const t = d.data();
+               t.id = d.id;
+               if (t.status === 'open') {
+                   open.push(t);
+               } 
+           });
+           setOpenTrades(open.sort((a,b) => b.timestamp - a.timestamp));
+       }, (err) => {
+           console.error("Trade Hub Error", err);
+           if (err.message?.toLowerCase().includes('permission') || err.code === 'permission-denied') setDbError(true);
+       });
+       return () => unsub();
+   }, [user, db, setDbError]);
 
-            {/* Header */}
-            <div className={`flex justify-between items-center ${padding} bg-white/40 backdrop-blur-md border-b border-white/20`}>
-              <h3 className={`font-black uppercase tracking-tight ${rarityStyle.color || 'text-slate-900'} ${size === 'large' ? 'text-2xl sm:text-3xl' : size === 'small' ? 'text-[0.6rem] sm:text-[0.8rem]' : 'text-[0.4rem] sm:text-[0.5rem]'} truncate max-w-[70%] drop-shadow-sm ${card.isMassive ? 'text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-fuchsia-600 drop-shadow-none' : ''}`}>{card.name}</h3>
-              <div className="flex items-center space-x-1 font-black text-rose-700 shrink-0 bg-white/60 px-1.5 py-0.5 rounded-full shadow-sm border border-white/50">
-                {size !== 'mini' && <span className="drop-shadow-sm">{card.hp} HP</span>}
-                <div className={`rounded-full bg-white p-0.5 shadow-sm`}>
-                  <ElementIcon className={`${elementIconSize} ${elementStyle.color}`} />
-                </div>
-              </div>
-            </div>
+   const postTrade = async () => {
+       if (!offerCardId || !reqCardId) return;
+       if (!myCollection[offerCardId] || myCollection[offerCardId] <= 0) {
+           showToast("You don't own the card you are trying to offer!", 'error');
+           return;
+       }
+       setIsPosting(true);
+       try {
+           // Deduct from local inventory immediately
+           setCollection(prev => {
+               const next = { ...prev };
+               next[offerCardId] -= 1;
+               return next;
+           });
 
-            {/* Art */}
-            <div className={`flex-1 m-1.5 sm:m-2.5 border border-white/20 bg-gradient-to-br ${elementStyle.artBg} shadow-inner flex items-center justify-center relative overflow-hidden rounded-xl`}>
-              <div className="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
-              <div className={`${iconSize} z-10 relative drop-shadow-[0_10px_15px_rgba(0,0,0,0.4)] group-hover:scale-110 transition-transform duration-500 ease-out ${card.isMassive ? 'scale-110 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]' : ''}`}>
-                <img src={card.imgSrc} alt={card.name} className={`w-full h-full object-contain ${elementStyle.imgFilter}`} />
-              </div>
-            </div>
+           await addDoc(getTradesCol(db), {
+               offererId: user.uid,
+               offererName: profile?.username || user.displayName || `Player_${user.uid.substring(0,4)}`,
+               offerId: offerCardId,
+               reqId: reqCardId,
+               status: 'open',
+               timestamp: Date.now()
+           });
+           showToast("Trade posted successfully!", 'success');
+           setOfferCardId('');
+           setReqCardId('');
+       } catch(e) {
+           console.error(e);
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+              setDbError(true);
+           } else {
+              showToast("Failed to post trade.", 'error');
+           }
+       }
+       setIsPosting(false);
+   };
 
-            {/* In Battle Overlays */}
-            {inBattle && (
-               <>
-                 <div className="absolute top-1 left-1 right-1 bg-black/60 rounded-full h-2 sm:h-2.5 overflow-hidden z-30 border border-white/20 backdrop-blur-md shadow-inner">
-                    <div className={`h-full transition-all duration-500 ease-out ${card.currentHp > card.hp * 0.5 ? 'bg-emerald-500' : card.currentHp > card.hp * 0.2 ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${Math.max(0, (card.currentHp / card.hp) * 100)}%` }}></div>
-                 </div>
-                 {card.attachedEnergy > 0 && (
-                   <div className="absolute bottom-[35%] right-2 flex flex-col gap-1.5 z-30">
-                     {[...Array(card.attachedEnergy)].map((_, i) => (
-                       <div key={i} className="w-5 h-5 sm:w-7 sm:h-7 bg-white/90 backdrop-blur-sm rounded-full border-2 border-slate-800 flex items-center justify-center shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in">
-                         <ZapIcon className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500 drop-shadow-sm" />
-                       </div>
-                     ))}
-                   </div>
+   const cancelTrade = async (trade) => {
+       try {
+           // Refund card
+           setCollection(prev => {
+               const next = { ...prev };
+               next[trade.offerId] = (next[trade.offerId] || 0) + 1;
+               return next;
+           });
+           await deleteDoc(doc(getTradesCol(db), trade.id));
+           showToast("Trade cancelled.", 'info');
+       } catch(e) { 
+           console.error(e); 
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+           else showToast("Cancel failed", 'error'); 
+       }
+   };
+
+   const acceptTrade = async (trade) => {
+       if (!myCollection[trade.reqId] || myCollection[trade.reqId] <= 0) {
+           showToast("You do not own the requested card!", 'error');
+           return;
+       }
+       try {
+           // Swap cards in local inventory
+           setCollection(prev => {
+               const next = { ...prev };
+               next[trade.reqId] -= 1;
+               next[trade.offerId] = (next[trade.offerId] || 0) + 1;
+               return next;
+           });
+           
+           // FIX: Directly modify the offerer's save file to give them the card, even if they are offline!
+           const offererSaveRef = getSaveDocRef(db, trade.offererId);
+           const offererSnap = await getDoc(offererSaveRef);
+           if (offererSnap.exists()) {
+               const offererData = offererSnap.data();
+               const offererCollection = offererData.collection || {};
+               offererCollection[trade.reqId] = (offererCollection[trade.reqId] || 0) + 1;
+               await updateDoc(offererSaveRef, { collection: offererCollection });
+           }
+
+           // Delete the trade globally
+           await deleteDoc(doc(getTradesCol(db), trade.id));
+           showToast(`Trade accepted! You received ${getBaseCard(trade.offerId).name}.`, 'success');
+       } catch(e) { 
+           console.error(e); 
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+           else showToast("Accept failed", 'error'); 
+       }
+   };
+
+   // Prepare dropdown options
+   const myOwnedIds = Object.keys(myCollection).filter(id => myCollection[id] > 0);
+   const allCardsGrouped = {
+       "Genesis Set": CHARACTERS.filter(c => c.set === 'genesis'),
+       "Awakening Set": CHARACTERS.filter(c => c.set === 'awakening'),
+       "Voidfall Set": CHARACTERS.filter(c => c.set === 'voidfall'),
+       "Mythos Set": CHARACTERS.filter(c => c.set === 'mythos'),
+       "Energy Cards": ENERGY_CARDS
+   };
+
+   return (
+      <div className="flex-1 flex flex-col xl:flex-row gap-8 pb-10">
+         
+         {/* POST A TRADE PANEL */}
+         <div className="w-full xl:w-[450px] shrink-0 bg-slate-900/60 backdrop-blur-xl border border-blue-500/30 rounded-[2rem] p-6 shadow-[0_0_40px_rgba(59,130,246,0.1)] flex flex-col h-fit">
+            <h3 className="text-2xl font-black text-white tracking-widest mb-6 flex items-center gap-3"><ArrowRightLeft className="text-blue-500" /> CREATE TRADE</h3>
+            
+            <label className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Card to Offer (You give)</label>
+            <select value={offerCardId} onChange={e => setOfferCardId(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 mb-6">
+                <option value="">-- Select a card you own --</option>
+                {myOwnedIds.map(id => {
+                    const card = getBaseCard(id);
+                    if (!card) return null;
+                    return <option key={id} value={id}>{card.name} {card.isMassive ? '[MASSIVE]' : ''} ({card.rarity}) x{myCollection[id]}</option>
+                })}
+            </select>
+
+            <label className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Card to Request (You want)</label>
+            <select value={reqCardId} onChange={e => setReqCardId(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 mb-8">
+                <option value="">-- Select any card --</option>
+                {Object.entries(allCardsGrouped).map(([group, cards]) => (
+                   <optgroup key={group} label={group}>
+                       {cards.map(c => <option key={c.id} value={c.id}>{c.name} ({c.rarity})</option>)}
+                   </optgroup>
+                ))}
+            </select>
+
+            <button 
+                onClick={postTrade} 
+                disabled={!offerCardId || !reqCardId || isPosting}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black tracking-[0.2em] rounded-xl shadow-lg transition-all"
+            >
+                {isPosting ? 'POSTING...' : 'POST TRADE'}
+            </button>
+         </div>
+
+         {/* OPEN TRADES PANEL */}
+         <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] p-6 shadow-inner flex flex-col min-h-[500px]">
+             <h3 className="text-2xl font-black text-white tracking-widest mb-6">GLOBAL TRADES ({openTrades.length})</h3>
+             
+             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                 {openTrades.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center h-full opacity-50">
+                         <Ghost className="w-16 h-16 mb-4 text-slate-500" />
+                         <p className="font-bold tracking-widest uppercase">No open trades right now</p>
+                     </div>
+                 ) : (
+                     openTrades.map(trade => {
+                         const offerCard = getBaseCard(trade.offerId);
+                         const reqCard = getBaseCard(trade.reqId);
+                         if (!offerCard || !reqCard) return null;
+
+                         const isMine = trade.offererId === user.uid;
+                         const canAccept = !isMine && myCollection[trade.reqId] > 0;
+
+                         return (
+                             <div key={trade.id} className="bg-slate-950/80 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-6 justify-between hover:border-blue-500/50 transition-colors">
+                                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                                     
+                                     {/* Offering */}
+                                     <div className="flex flex-col items-center">
+                                         <span className="text-[0.6rem] text-emerald-400 font-bold uppercase tracking-widest mb-1">Offering</span>
+                                         <div className="w-20"><TCGCard card={offerCard} size="small" /></div>
+                                     </div>
+
+                                     <ArrowRightLeft className="w-6 h-6 text-slate-600 rotate-90 sm:rotate-0" />
+
+                                     {/* Requesting */}
+                                     <div className="flex flex-col items-center">
+                                         <span className="text-[0.6rem] text-rose-400 font-bold uppercase tracking-widest mb-1">Requesting</span>
+                                         <div className="w-20"><TCGCard card={reqCard} size="small" /></div>
+                                     </div>
+                                 </div>
+
+                                 <div className="flex flex-col items-center sm:items-end w-full sm:w-auto mt-4 sm:mt-0">
+                                     <span className="text-slate-400 text-xs font-bold mb-3">{isMine ? 'Your Trade' : `Posted by ${trade.offererName}`}</span>
+                                     {isMine ? (
+                                         <button onClick={() => cancelTrade(trade)} className="w-full sm:w-auto px-6 py-2 bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white rounded-lg font-bold tracking-widest transition-colors">CANCEL</button>
+                                     ) : (
+                                         <button onClick={() => acceptTrade(trade)} disabled={!canAccept} className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white disabled:bg-slate-800 disabled:text-slate-600 rounded-lg font-black tracking-widest hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20 disabled:shadow-none">
+                                            {canAccept ? 'ACCEPT TRADE' : 'MISSING CARD'}
+                                         </button>
+                                     )}
+                                 </div>
+                             </div>
+                         )
+                     })
                  )}
-               </>
-            )}
-
-            {/* Footer / Stats */}
-            {size !== 'mini' && (
-              <div className={`bg-white/80 backdrop-blur-md flex flex-col ${padding} border-t border-white/30`}>
-                <div className="flex justify-between items-center font-black">
-                  <span className={`flex items-center gap-1.5 sm:gap-2 ${size === 'large' ? 'text-xl' : 'text-[0.5rem] sm:text-[0.65rem]'} text-slate-800`}>
-                     <Swords className={`${elementIconSize} text-slate-500`} /> {card.attack}
-                  </span>
-                  <div className="flex flex-col items-end leading-none text-rose-600 drop-shadow-sm">
-                    <span className={`${size === 'large' ? 'text-3xl' : 'text-[0.75rem] sm:text-xs'}`}>{card.dmg}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Back */}
-        <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-black border-2 sm:border-[4px] border-slate-700/50 rounded-3xl flex items-center justify-center shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-           <Layers className={`${size === 'large' ? 'w-24 h-24' : 'w-6 h-6 sm:w-10 sm:h-10'} text-amber-500 drop-shadow-md`} />
-        </div>
+             </div>
+         </div>
       </div>
-    </div>
-  );
+   );
 };
 
 
@@ -947,19 +1131,20 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
 
 
 // --- ONLINE LOBBY COMPONENT ---
-const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
+const OnlineLobby = ({ user, db, profile, onStartMatch, setDbError, showToast }) => {
    const [lobbyUsers, setLobbyUsers] = useState([]);
    const [myStatus, setMyStatus] = useState(null);
 
    useEffect(() => {
-      if (!user || !db) return;
+      if (!user || !db || !profile) return;
 
       const myRef = doc(getLobbyCol(db), user.uid);
       const joinLobby = async () => {
          try {
              await setDoc(myRef, {
                  uid: user.uid,
-                 name: user.displayName || `Player_${user.uid.substring(0,4)}`,
+                 name: profile.username,
+                 avatar: profile.avatar,
                  status: 'idle',
                  challengerId: null,
                  matchId: null,
@@ -1001,7 +1186,7 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
           unsub();
           deleteDoc(myRef).catch(() => {});
       };
-   }, [user, db, setDbError]);
+   }, [user, db, profile, setDbError]);
 
    useEffect(() => {
       if (myStatus && myStatus.matchId) {
@@ -1146,8 +1331,8 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
                            lobbyUsers.map(u => (
                                <div key={u.uid} className="flex items-center justify-between bg-slate-950/50 border border-slate-800 p-4 sm:p-6 rounded-2xl hover:border-fuchsia-500/40 hover:bg-slate-900 transition-all group">
                                    <div className="flex items-center gap-5">
-                                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center font-black text-xl shadow-inner border border-white/10 group-hover:scale-110 transition-transform">
-                                           {u.name.charAt(0).toUpperCase()}
+                                       <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-black text-xl shadow-inner border border-white/10 group-hover:scale-110 transition-transform overflow-hidden">
+                                           {u.avatar ? <img src={u.avatar} alt="avatar" /> : u.name.charAt(0).toUpperCase()}
                                        </div>
                                        <div>
                                            <h4 className="font-bold text-white text-lg tracking-wide">{u.name}</h4>
@@ -1547,223 +1732,6 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
 };
 
 
-// --- GLOBAL TRADE HUB COMPONENT ---
-const TradeHub = ({ user, db, collection: myCollection, setCollection, showToast, setDbError }) => {
-   const [openTrades, setOpenTrades] = useState([]);
-   const [offerCardId, setOfferCardId] = useState('');
-   const [reqCardId, setReqCardId] = useState('');
-   const [isPosting, setIsPosting] = useState(false);
-
-   // Listen for global open trades & MY completed trades
-   useEffect(() => {
-       if (!user || !db) return;
-       const unsub = onSnapshot(getTradesCol(db), (snap) => {
-           const open = [];
-           snap.docs.forEach(d => {
-               const t = d.data();
-               t.id = d.id;
-               if (t.status === 'open') {
-                   open.push(t);
-               } else if (t.status === 'completed' && t.offererId === user.uid) {
-                   // This is MY trade that someone just accepted! Claim the reward!
-                   setCollection(prev => {
-                       const next = { ...prev };
-                       next[t.reqId] = (next[t.reqId] || 0) + 1;
-                       return next;
-                   });
-                   showToast(`Trade completed! You received ${getBaseCard(t.reqId).name}!`, 'success');
-                   deleteDoc(d.ref).catch(()=>{});
-               }
-           });
-           setOpenTrades(open.sort((a,b) => b.timestamp - a.timestamp));
-       }, (err) => {
-           console.error("Trade Hub Error", err);
-           if (err.message?.toLowerCase().includes('permission') || err.code === 'permission-denied') setDbError(true);
-       });
-       return () => unsub();
-   }, [user, db, setCollection, showToast, setDbError]);
-
-   const postTrade = async () => {
-       if (!offerCardId || !reqCardId) return;
-       if (!myCollection[offerCardId] || myCollection[offerCardId] <= 0) {
-           showToast("You don't own the card you are trying to offer!", 'error');
-           return;
-       }
-       setIsPosting(true);
-       try {
-           // Deduct from local inventory immediately
-           setCollection(prev => {
-               const next = { ...prev };
-               next[offerCardId] -= 1;
-               return next;
-           });
-
-           await addDoc(getTradesCol(db), {
-               offererId: user.uid,
-               offererName: user.displayName || `Player_${user.uid.substring(0,4)}`,
-               offerId: offerCardId,
-               reqId: reqCardId,
-               status: 'open',
-               timestamp: Date.now()
-           });
-           showToast("Trade posted successfully!", 'success');
-           setOfferCardId('');
-           setReqCardId('');
-       } catch(e) {
-           console.error(e);
-           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
-              setDbError(true);
-           } else {
-              showToast("Failed to post trade.", 'error');
-           }
-       }
-       setIsPosting(false);
-   };
-
-   const cancelTrade = async (trade) => {
-       try {
-           // Refund card
-           setCollection(prev => {
-               const next = { ...prev };
-               next[trade.offerId] = (next[trade.offerId] || 0) + 1;
-               return next;
-           });
-           await deleteDoc(doc(getTradesCol(db), trade.id));
-           showToast("Trade cancelled.", 'info');
-       } catch(e) { 
-           console.error(e); 
-           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
-           else showToast("Cancel failed", 'error'); 
-       }
-   };
-
-   const acceptTrade = async (trade) => {
-       if (!myCollection[trade.reqId] || myCollection[trade.reqId] <= 0) {
-           showToast("You do not own the requested card!", 'error');
-           return;
-       }
-       try {
-           // Swap cards in local inventory
-           setCollection(prev => {
-               const next = { ...prev };
-               next[trade.reqId] -= 1;
-               next[trade.offerId] = (next[trade.offerId] || 0) + 1;
-               return next;
-           });
-           
-           // Mark as completed so original offerer can claim it
-           await updateDoc(doc(getTradesCol(db), trade.id), { status: 'completed' });
-           showToast(`Trade accepted! You received ${getBaseCard(trade.offerId).name}.`, 'success');
-       } catch(e) { 
-           console.error(e); 
-           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
-           else showToast("Accept failed", 'error'); 
-       }
-   };
-
-   // Prepare dropdown options
-   const myOwnedIds = Object.keys(myCollection).filter(id => myCollection[id] > 0);
-   const allCardsGrouped = {
-       "Genesis Set": CHARACTERS.filter(c => c.set === 'genesis'),
-       "Awakening Set": CHARACTERS.filter(c => c.set === 'awakening'),
-       "Voidfall Set": CHARACTERS.filter(c => c.set === 'voidfall'),
-       "Mythos Set": CHARACTERS.filter(c => c.set === 'mythos'),
-       "Energy Cards": ENERGY_CARDS
-   };
-
-   return (
-      <div className="flex-1 flex flex-col xl:flex-row gap-8 pb-10">
-         
-         {/* POST A TRADE PANEL */}
-         <div className="w-full xl:w-[450px] shrink-0 bg-slate-900/60 backdrop-blur-xl border border-blue-500/30 rounded-[2rem] p-6 shadow-[0_0_40px_rgba(59,130,246,0.1)] flex flex-col h-fit">
-            <h3 className="text-2xl font-black text-white tracking-widest mb-6 flex items-center gap-3"><ArrowRightLeft className="text-blue-500" /> CREATE TRADE</h3>
-            
-            <label className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Card to Offer (You give)</label>
-            <select value={offerCardId} onChange={e => setOfferCardId(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 mb-6">
-                <option value="">-- Select a card you own --</option>
-                {myOwnedIds.map(id => {
-                    const card = getBaseCard(id);
-                    if (!card) return null;
-                    return <option key={id} value={id}>{card.name} ({card.rarity}) x{myCollection[id]}</option>
-                })}
-            </select>
-
-            <label className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Card to Request (You want)</label>
-            <select value={reqCardId} onChange={e => setReqCardId(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 mb-8">
-                <option value="">-- Select any card --</option>
-                {Object.entries(allCardsGrouped).map(([group, cards]) => (
-                   <optgroup key={group} label={group}>
-                       {cards.map(c => <option key={c.id} value={c.id}>{c.name} ({c.rarity})</option>)}
-                   </optgroup>
-                ))}
-            </select>
-
-            <button 
-                onClick={postTrade} 
-                disabled={!offerCardId || !reqCardId || isPosting}
-                className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black tracking-[0.2em] rounded-xl shadow-lg transition-all"
-            >
-                {isPosting ? 'POSTING...' : 'POST TRADE'}
-            </button>
-         </div>
-
-         {/* OPEN TRADES PANEL */}
-         <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] p-6 shadow-inner flex flex-col min-h-[500px]">
-             <h3 className="text-2xl font-black text-white tracking-widest mb-6">GLOBAL TRADES ({openTrades.length})</h3>
-             
-             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
-                 {openTrades.length === 0 ? (
-                     <div className="flex flex-col items-center justify-center h-full opacity-50">
-                         <Ghost className="w-16 h-16 mb-4 text-slate-500" />
-                         <p className="font-bold tracking-widest uppercase">No open trades right now</p>
-                     </div>
-                 ) : (
-                     openTrades.map(trade => {
-                         const offerCard = getBaseCard(trade.offerId);
-                         const reqCard = getBaseCard(trade.reqId);
-                         const isMine = trade.offererId === user.uid;
-                         const canAccept = !isMine && myCollection[trade.reqId] > 0;
-
-                         return (
-                             <div key={trade.id} className="bg-slate-950/80 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-6 justify-between hover:border-blue-500/50 transition-colors">
-                                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                                     
-                                     {/* Offering */}
-                                     <div className="flex flex-col items-center">
-                                         <span className="text-[0.6rem] text-emerald-400 font-bold uppercase tracking-widest mb-1">Offering</span>
-                                         <div className="w-20"><TCGCard card={offerCard} size="small" /></div>
-                                     </div>
-
-                                     <ArrowRightLeft className="w-6 h-6 text-slate-600 rotate-90 sm:rotate-0" />
-
-                                     {/* Requesting */}
-                                     <div className="flex flex-col items-center">
-                                         <span className="text-[0.6rem] text-rose-400 font-bold uppercase tracking-widest mb-1">Requesting</span>
-                                         <div className="w-20"><TCGCard card={reqCard} size="small" /></div>
-                                     </div>
-                                 </div>
-
-                                 <div className="flex flex-col items-center sm:items-end w-full sm:w-auto mt-4 sm:mt-0">
-                                     <span className="text-slate-400 text-xs font-bold mb-3">{isMine ? 'Your Trade' : `Posted by ${trade.offererName}`}</span>
-                                     {isMine ? (
-                                         <button onClick={() => cancelTrade(trade)} className="w-full sm:w-auto px-6 py-2 bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white rounded-lg font-bold tracking-widest transition-colors">CANCEL</button>
-                                     ) : (
-                                         <button onClick={() => acceptTrade(trade)} disabled={!canAccept} className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white disabled:bg-slate-800 disabled:text-slate-600 rounded-lg font-black tracking-widest hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20 disabled:shadow-none">
-                                            {canAccept ? 'ACCEPT TRADE' : 'MISSING CARD'}
-                                         </button>
-                                     )}
-                                 </div>
-                             </div>
-                         )
-                     })
-                 )}
-             </div>
-         </div>
-      </div>
-   );
-};
-
-
 // --- MAIN APP COMPONENT ---
 export default function App() {
   const [coins, setCoins] = useState(500); // 500 starting coins
@@ -1773,6 +1741,10 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [toast, setToast] = useState(null);
   
+  // Profile Setup & Admin States
+  const [profile, setProfile] = useState(null);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+
   // Offline Battle State
   const [battleDifficulty, setBattleDifficulty] = useState(null); 
 
@@ -1866,6 +1838,13 @@ export default function App() {
              if (data.coins !== undefined) setCoins(data.coins);
              if (data.collection) setCollection(data.collection);
              if (data.deck) setDeck(data.deck);
+             if (data.profile) {
+                 setProfile(data.profile);
+             } else {
+                 setShowProfileSetup(true);
+             }
+          } else {
+             setShowProfileSetup(true);
           }
        } catch(e) { 
            console.error("Load Data Error:", e);
@@ -1879,11 +1858,11 @@ export default function App() {
   }, [user, db]);
 
   useEffect(() => {
-     if (dataLoaded && user && db && !dbError) {
+     if (dataLoaded && user && db && !dbError && profile && !showProfileSetup) {
         const saveData = async () => {
            try {
               const docRef = getSaveDocRef(db, user.uid);
-              await setDoc(docRef, { coins, collection, deck });
+              await setDoc(docRef, { coins, collection, deck, profile });
            } catch(e) { 
                console.error("Save Data Error:", e); 
                if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
@@ -1893,7 +1872,7 @@ export default function App() {
         };
         saveData();
      }
-  }, [coins, collection, deck, dataLoaded, user, db, dbError]);
+  }, [coins, collection, deck, profile, dataLoaded, user, db, dbError, showProfileSetup]);
 
   
   const [currentCards, setCurrentCards] = useState([]);
@@ -2007,6 +1986,8 @@ export default function App() {
       setOnlineMatchId(null);
   };
 
+  const isAdmin = profile?.username?.toLowerCase() === 'relthecreator';
+
   // --- RENDERING SCREENS ---
 
   if (dbError) {
@@ -2063,6 +2044,10 @@ service cloud.firestore {
 
   if (!dataLoaded) {
      return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-amber-500 font-black tracking-[0.2em]">LOADING SAVE DATA...</div>;
+  }
+
+  if (showProfileSetup) {
+      return <ProfileSetup onComplete={(p) => { setProfile(p); setShowProfileSetup(false); }} user={user} db={db} />;
   }
 
   return (
@@ -2125,26 +2110,80 @@ service cloud.firestore {
           <button onClick={() => navTo('online')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-slate-800 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.2)]' : 'text-slate-400 hover:text-fuchsia-400 hover:bg-slate-800/50 border border-transparent'}`}>
             <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">ONLINE</span>
           </button>
+          {isAdmin && (
+             <button onClick={() => navTo('admin')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'admin' ? 'bg-slate-800 text-yellow-400 border border-yellow-500/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : 'text-slate-400 hover:text-yellow-400 hover:bg-slate-800/50 border border-transparent'}`}>
+                <Crown className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">ADMIN</span>
+             </button>
+          )}
         </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-3 bg-slate-950 px-3 sm:px-6 py-2 sm:py-2.5 rounded-full border border-slate-800 shadow-inner mr-1 sm:mr-2">
-          <button onClick={() => setShowRules(true)} className="text-slate-400 hover:text-slate-200 transition-colors hidden sm:block" title="How to Play">
+        <div className="flex items-center space-x-2 sm:space-x-3 bg-slate-950 px-3 sm:px-4 py-1 sm:py-2 rounded-full border border-slate-800 shadow-inner mr-1 sm:mr-2">
+          <button onClick={() => setShowRules(true)} className="text-slate-400 hover:text-slate-200 transition-colors hidden lg:block mr-2" title="How to Play">
              <BookOpen className="w-5 h-5" />
           </button>
-          <div className="w-px h-6 bg-slate-800 mx-1 hidden sm:block"></div>
+          
           <div className="flex items-center bg-amber-500/10 px-2 sm:px-3 py-1 rounded-lg border border-amber-500/20">
              <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 mr-2" />
              <span className="font-black text-amber-400 tracking-wide text-sm sm:text-base">{coins.toLocaleString()}</span>
           </div>
+          
           <div className="w-px h-6 bg-slate-800 mx-1"></div>
-          <button onClick={handleLogout} className="text-slate-500 hover:text-rose-500 transition-colors" title="Sign Out">
-             <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+          
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full pl-1 pr-2 py-1 relative group cursor-help">
+             <img src={profile?.avatar} alt="Profile" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-slate-600 bg-black" />
+             <span className="text-xs font-bold text-slate-300 hidden sm:block max-w-[100px] truncate">{profile?.username}</span>
+             
+             {/* Hover Logout Overlay */}
+             <div className="absolute inset-0 bg-rose-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleLogout}>
+                 <LogOut className="w-4 h-4 text-white" />
+                 <span className="text-white text-xs font-bold ml-2 hidden sm:block">LOGOUT</span>
+             </div>
+          </div>
         </div>
       </nav>
 
       <main className="pt-28 sm:pt-32 p-4 sm:p-10 flex-1 flex flex-col relative z-10 max-w-[90rem] mx-auto w-full">
         
+        {/* ADMIN DASHBOARD VIEW */}
+        {activeTab === 'admin' && isAdmin && (
+           <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-10 animate-in fade-in zoom-in-95 duration-500">
+              <Crown className="w-20 h-20 text-yellow-400 mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
+              <h2 className="text-4xl sm:text-6xl font-black text-yellow-400 tracking-widest mb-12 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)] text-center">ADMIN DASHBOARD</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                 <button 
+                     onClick={() => { setCoins(c => c + 1000000); showToast("Added 1,000,000 Coins!", "success"); }} 
+                     className="p-8 bg-slate-900 border-2 border-yellow-500/50 rounded-[2rem] hover:bg-yellow-500/10 hover:border-yellow-400 hover:scale-105 transition-all text-xl font-black text-white flex flex-col items-center gap-4 shadow-2xl group"
+                 >
+                     <div className="p-4 bg-yellow-500/20 rounded-full group-hover:scale-110 transition-transform">
+                        <Coins className="w-12 h-12 text-yellow-400" />
+                     </div>
+                     ADD 1,000,000 COINS
+                 </button>
+                 <button 
+                     onClick={() => { 
+                         const newCol = { ...collection };
+                         // Grant 10 of every normal card AND Massive card
+                         CHARACTERS.forEach(c => {
+                             newCol[c.id] = (newCol[c.id] || 0) + 10;
+                             if (['Rare', 'Epic', 'Legendary', 'GX'].includes(c.rarity)) {
+                                 newCol[c.id + '_massive'] = (newCol[c.id + '_massive'] || 0) + 10;
+                             }
+                         });
+                         setCollection(newCol);
+                         showToast("Granted x10 of ALL cards!", "success");
+                     }} 
+                     className="p-8 bg-slate-900 border-2 border-purple-500/50 rounded-[2rem] hover:bg-purple-500/10 hover:border-purple-400 hover:scale-105 transition-all text-xl font-black text-white flex flex-col items-center gap-4 shadow-2xl group"
+                 >
+                     <div className="p-4 bg-purple-500/20 rounded-full group-hover:scale-110 transition-transform">
+                        <Layers className="w-12 h-12 text-purple-400" /> 
+                     </div>
+                     UNLOCK EVERYTHING
+                 </button>
+              </div>
+           </div>
+        )}
+
         {/* SHOP VIEW */}
         {activeTab === 'shop' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1 flex flex-col items-center justify-center pb-10">
@@ -2313,10 +2352,14 @@ service cloud.firestore {
                 <>
                    <div className="text-center mb-10">
                      <h2 className="text-2xl sm:text-4xl font-black text-amber-500 tracking-[0.2em] drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">{activePackName}</h2>
+                     
+                     {/* FIX: New visual mini-card progress bar instead of boring dots! */}
                      {!showSummary && currentCards.length <= 15 && (
-                        <div className="mt-6 flex items-center justify-center space-x-3">
-                          {[...Array(currentCards.length)].map((_, i) => (
-                            <div key={i} className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${i === activeCardIndex ? 'w-10 sm:w-16 bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.8)]' : i < activeCardIndex ? 'w-3 sm:w-4 bg-slate-700' : 'w-3 sm:w-4 bg-slate-800'}`} />
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
+                          {currentCards.map((card, i) => (
+                            <div key={i} className={`transition-all duration-500 ${i === activeCardIndex ? 'scale-125 z-10 -translate-y-2 drop-shadow-xl' : 'scale-90 opacity-70'}`}>
+                               <TCGCard card={card} size="mini" isFlipped={i < activeCardIndex || (i === activeCardIndex && isCardRevealed)} />
+                            </div>
                           ))}
                         </div>
                      )}
@@ -2502,7 +2545,7 @@ service cloud.firestore {
 
         {/* TRADE VIEW */}
         {activeTab === 'trades' && (
-           <TradeHub user={user} db={db} collection={collection} setCollection={setCollection} showToast={showToast} setDbError={setDbError} />
+           <TradeHub user={user} db={db} collection={collection} setCollection={setCollection} showToast={showToast} setDbError={setDbError} profile={profile} />
         )}
 
         {/* OFFLINE BATTLE VIEW */}
@@ -2594,6 +2637,7 @@ service cloud.firestore {
                 <OnlineLobby 
                    user={user} 
                    db={db} 
+                   profile={profile}
                    setDbError={setDbError} 
                    onStartMatch={(matchId) => setOnlineMatchId(matchId)}
                    showToast={showToast}
