@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -123,7 +123,43 @@ const COMBAT_CHARACTERS = [
   
   { id: 'v_l1', set: 'voidfall', name: 'Void Leviathan', rarity: 'Legendary', element: 'Water', hp: 200, attack: 'Abyssal Maw', dmg: 130, ability: 'Consume: Instantly destroys any card under 40 HP.', flavor: 'Swallows entire planets whole.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=voidleviathan' },
 
-  { id: 'v_gx1', set: 'voidfall', name: 'Chaos Bringer GX', rarity: 'GX', element: 'Dark', hp: 290, attack: 'Annihilation', dmg: 240, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The embodiment of universal entropy.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chaosbringer' }
+  { id: 'v_gx1', set: 'voidfall', name: 'Chaos Bringer GX', rarity: 'GX', element: 'Dark', hp: 290, attack: 'Annihilation', dmg: 240, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The embodiment of universal entropy.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chaosbringer' },
+
+  // --- SET 4: MYTHOS (Massive 30 Card Expansion) ---
+  { id: 'm_c1', set: 'mythos', name: 'Minotaur Calf', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Headbutt', dmg: 20, ability: 'Stubborn: Takes 5 less damage.', flavor: 'Small horns, big attitude.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=minotaur' },
+  { id: 'm_c2', set: 'mythos', name: 'Harpy Hatchling', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Screech', dmg: 15, ability: 'Annoy: Lowers enemy attack by 5.', flavor: 'Loud enough to wake the dead.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=harpy' },
+  { id: 'm_c3', set: 'mythos', name: 'River Nymph', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Soothe: Heals 5 HP to active ally.', flavor: 'Protects the sacred streams.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=nymph' },
+  { id: 'm_c4', set: 'mythos', name: 'Satyr Piper', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Melody', dmg: 15, ability: 'Lullaby: 10% chance to sleep enemy.', flavor: 'Always ready for a woodland party.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=satyr' },
+  { id: 'm_c5', set: 'mythos', name: 'Centaur Foal', rarity: 'Common', element: 'Wind', hp: 55, attack: 'Kick', dmg: 20, ability: 'Swift: Ignores retreat cost.', flavor: 'Faster than the plains wind.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=centaur' },
+  { id: 'm_c6', set: 'mythos', name: 'Siren Song', rarity: 'Common', element: 'Water', hp: 40, attack: 'Echo', dmg: 15, ability: 'Lure: Prevents enemy retreat.', flavor: 'A beautiful voice with deadly intent.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=siren' },
+  { id: 'm_c7', set: 'mythos', name: 'Cyclops Runt', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Stomp', dmg: 25, ability: 'Clumsy: 10% chance to hurt itself.', flavor: 'Only has one eye, still misses.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=cyclops' },
+  { id: 'm_c8', set: 'mythos', name: 'Basilisk Scale', rarity: 'Common', element: 'Dark', hp: 30, attack: 'Glare', dmg: 15, ability: 'Petrify: 5% chance to stun.', flavor: 'Don\'t look directly at it.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=basilisk' },
+  { id: 'm_c9', set: 'mythos', name: 'Gorgon Snake', rarity: 'Common', element: 'Dark', hp: 35, attack: 'Bite', dmg: 20, ability: 'Venom: Deals 5 damage end of turn.', flavor: 'Slipped away from Medusa\'s hair.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=snake' },
+  { id: 'm_c10', set: 'mythos', name: 'Chimera Cub', rarity: 'Common', element: 'Fire', hp: 50, attack: 'Spark', dmg: 15, ability: 'Hybrid: Counts as Fire and Dark.', flavor: 'Three heads, triple the trouble.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=chimera' },
+  { id: 'm_c11', set: 'mythos', name: 'Sphinx Riddle', rarity: 'Common', element: 'Light', hp: 45, attack: 'Confuse', dmg: 10, ability: 'Ponder: Opponent plays with hand revealed.', flavor: 'What walks on four legs in the morning?', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=sphinx' },
+  { id: 'm_c12', set: 'mythos', name: 'Pegasus Feather', rarity: 'Common', element: 'Wind', hp: 30, attack: 'Glide', dmg: 20, ability: 'Aero: Immune to Earth attacks.', flavor: 'Lighter than air itself.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pegasus' },
+  { id: 'm_c13', set: 'mythos', name: 'Griffin Claw', rarity: 'Common', element: 'Wind', hp: 40, attack: 'Swipe', dmg: 25, ability: 'Fierce: +5 damage vs Rares.', flavor: 'Half lion, half eagle, all dangerous.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=griffin' },
+  { id: 'm_c14', set: 'mythos', name: 'Kelpie Mane', rarity: 'Common', element: 'Water', hp: 50, attack: 'Drown', dmg: 20, ability: 'Tide: Water attacks do +5 damage.', flavor: 'A watery illusion of a horse.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=kelpie' },
+  { id: 'm_c15', set: 'mythos', name: 'Manticore Barb', rarity: 'Common', element: 'Fire', hp: 45, attack: 'Sting', dmg: 25, ability: 'Poison: 5 damage between turns.', flavor: 'A deadly tail from a mythical beast.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=manticore' },
+
+  { id: 'm_r1', set: 'mythos', name: 'Cerberus', rarity: 'Rare', element: 'Dark', hp: 110, attack: 'Tri-Bite', dmg: 45, ability: 'Guard: Blocks retreat for opponent.', flavor: 'The three-headed hound of Hades.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cerberus' },
+  { id: 'm_r2', set: 'mythos', name: 'Hydra', rarity: 'Rare', element: 'Water', hp: 130, attack: 'Acid Spit', dmg: 40, ability: 'Regrow: Heals 10 HP when damaged.', flavor: 'Cut off one head, two more shall take its place.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=hydra' },
+  { id: 'm_r3', set: 'mythos', name: 'Kraken', rarity: 'Rare', element: 'Water', hp: 140, attack: 'Tentacle Smash', dmg: 50, ability: 'Drag Down: Discards opponent active energy.', flavor: 'Release the beast of the depths.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=kraken' },
+  { id: 'm_r4', set: 'mythos', name: 'Leviathan', rarity: 'Rare', element: 'Water', hp: 150, attack: 'Tidal Wave', dmg: 60, ability: 'Massive: Cannot be instantly KOd.', flavor: 'The undisputed king of the ocean.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=leviathan' },
+  { id: 'm_r5', set: 'mythos', name: 'Fenrir', rarity: 'Rare', element: 'Dark', hp: 120, attack: 'Wolf Bite', dmg: 65, ability: 'Unbound: Breaks through all shields.', flavor: 'The wolf destined to swallow the sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=fenrir' },
+  { id: 'm_r6', set: 'mythos', name: 'Valkyrie', rarity: 'Rare', element: 'Light', hp: 90, attack: 'Spear Dive', dmg: 55, ability: 'Valhalla: Revives self once with 10 HP.', flavor: 'Chooser of the slain.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=valkyrie' },
+  { id: 'm_r7', set: 'mythos', name: 'Wendigo', rarity: 'Rare', element: 'Ghost', hp: 100, attack: 'Frost Claw', dmg: 60, ability: 'Hunger: +10 damage for each prize card taken.', flavor: 'A spirit of winter and starvation.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wendigo' },
+  { id: 'm_r8', set: 'mythos', name: 'Thunderbird', rarity: 'Rare', element: 'Electric', hp: 110, attack: 'Lightning Strike', dmg: 70, ability: 'Storm: Deals 5 damage to all benched pokemon.', flavor: 'Lightning flashes with every flap of its wings.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=thunderbird' },
+  { id: 'm_r9', set: 'mythos', name: 'Kitsune', rarity: 'Rare', element: 'Fire', hp: 95, attack: 'Fox Fire', dmg: 50, ability: 'Illusion: Avoids attacks 25% of the time.', flavor: 'A nine-tailed spirit of trickery.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=kitsune' },
+
+  { id: 'm_e1', set: 'mythos', name: 'Bahamut', rarity: 'Epic', element: 'Cosmic', hp: 160, attack: 'Mega Flare', dmg: 90, ability: 'Dragon King: Buffs all allied attacks by +10.', flavor: 'The platinum dragon of legend.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bahamut' },
+  { id: 'm_e2', set: 'mythos', name: 'Jormungandr', rarity: 'Epic', element: 'Water', hp: 170, attack: 'World Coil', dmg: 85, ability: 'Constrict: Enemy active cannot retreat.', flavor: 'The serpent that encircles the world.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=jormun' },
+  { id: 'm_e3', set: 'mythos', name: 'Quetzalcoatl', rarity: 'Epic', element: 'Wind', hp: 150, attack: 'Hurricane Breath', dmg: 80, ability: 'Feathered Serpent: Heals team 10 HP per turn.', flavor: 'The majestic deity of wind and wisdom.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=quetzal' },
+  { id: 'm_e4', set: 'mythos', name: 'Behemoth', rarity: 'Epic', element: 'Earth', hp: 180, attack: 'Earth Shatter', dmg: 95, ability: 'Unstoppable: Immune to all negative status effects.', flavor: 'The beast that shakes the earth.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=behemoth' },
+
+  { id: 'm_l1', set: 'mythos', name: 'Ouroboros', rarity: 'Legendary', element: 'Cosmic', hp: 220, attack: 'Eternal Cycle', dmg: 140, ability: 'Infinity: If knocked out, shuffles back into deck instead of discarding.', flavor: 'The snake eating its own tail. The infinite loop.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=ouroboros' },
+
+  { id: 'm_gx1', set: 'mythos', name: 'Chronos GX', rarity: 'GX', element: 'Cosmic', hp: 300, attack: 'Time Paradox', dmg: 250, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The master of time. Erases enemies from existence.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chronos' }
 ];
 
 const CHARACTERS = [...ENERGY_CARDS, ...COMBAT_CHARACTERS];
@@ -149,6 +185,20 @@ const PACKS = [
     dropRates: { Common: 0.55, Rare: 0.30, Epic: 0.11, Legendary: 0.03, GX: 0.01 },
     guaranteed: ['Rare'],
     set: 'voidfall' 
+  },
+  {
+    id: 'p4', name: 'Mythos Booster', description: '5 Cards. Face ancient legends! Features Chronos GX!',
+    cost: 400, cardCount: 5, color: 'from-emerald-700 via-teal-800 to-cyan-950',
+    dropRates: { Common: 0.55, Rare: 0.30, Epic: 0.11, Legendary: 0.03, GX: 0.01 },
+    guaranteed: ['Rare'],
+    set: 'mythos' 
+  },
+  {
+    id: 'p5', name: 'Mythos God Pack', description: '10 Cards. The ultimate gamble. GUARANTEES 1 Legendary or GX!',
+    cost: 1500, cardCount: 10, color: 'from-yellow-400 via-amber-600 to-yellow-900',
+    dropRates: { Common: 0.40, Rare: 0.35, Epic: 0.15, Legendary: 0.08, GX: 0.02 },
+    guaranteed: ['Legendary', 'Epic', 'Rare', 'Rare'],
+    set: 'mythos' 
   }
 ];
 
@@ -173,10 +223,9 @@ STARTER_DECK.forEach(id => {
 
 // --- HELPER LOGIC ---
 
-// Ensure we strictly follow the mandated paths to avoid 7-segment or permission errors
-// Add .replace(/\//g, '_') to scrub any slashes out of the app ID!
 const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, '_') : 'mythic-pulls-live';
 
+const getLobbyCol = (db) => collection(db, 'artifacts', appId, 'public', 'data', 'lobby');
 const getMatchesCol = (db) => collection(db, 'artifacts', appId, 'public', 'data', 'matches');
 const getSaveDocRef = (db, uid) => doc(db, 'artifacts', appId, 'users', uid, 'savedata', 'game');
 
@@ -196,7 +245,12 @@ const openPack = (pack) => {
   const setCards = COMBAT_CHARACTERS.filter(c => c.set === pack.set);
 
   pack.guaranteed.forEach(rarity => {
-    let possible = setCards.filter(c => c.rarity === rarity);
+    // If pack guarantees Legendary, give a small chance for it to upgrade to GX
+    let finalRarity = rarity;
+    if (rarity === 'Legendary' && Math.random() < 0.2) finalRarity = 'GX';
+
+    let possible = setCards.filter(c => c.rarity === finalRarity);
+    if(possible.length === 0) possible = setCards.filter(c => c.rarity === 'Legendary'); // Fallback
     if(possible.length === 0) possible = setCards; 
     pulled.push({ ...possible[Math.floor(Math.random() * possible.length)], instanceId: Math.random().toString(36).substr(2, 9) });
   });
@@ -330,8 +384,8 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
 };
 
 
-// --- BATTLE ARENA COMPONENT ---
-const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
+// --- OFFLINE BATTLE ARENA COMPONENT ---
+const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty }) => {
   const [gameState, setGameState] = useState('setup');
   const [winner, setWinner] = useState(null);
   const [log, setLog] = useState(["Battle starting... Shuffling decks."]);
@@ -362,13 +416,22 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
        attempts++;
     }
 
+    // Bot Deck Generation Based on Difficulty
     let bDeck, bHand;
     let botHasBasic = false;
     attempts = 0;
     while (!botHasBasic && attempts < 15) {
        let bDeckIds = [];
        for(let i=0; i<10; i++) bDeckIds.push(ENERGY_CARDS[Math.floor(Math.random() * ENERGY_CARDS.length)].id);
-       for(let i=0; i<20; i++) bDeckIds.push(COMBAT_CHARACTERS[Math.floor(Math.random() * COMBAT_CHARACTERS.length)].id);
+       
+       let botPool = COMBAT_CHARACTERS;
+       if (difficulty === 'easy') botPool = COMBAT_CHARACTERS.filter(c => ['Common', 'Rare'].includes(c.rarity));
+       if (difficulty === 'medium') botPool = COMBAT_CHARACTERS;
+       if (difficulty === 'hard') botPool = COMBAT_CHARACTERS.filter(c => ['Rare', 'Epic'].includes(c.rarity));
+       if (difficulty === 'extreme') botPool = COMBAT_CHARACTERS.filter(c => ['Epic', 'Legendary', 'GX'].includes(c.rarity));
+       if (botPool.length === 0) botPool = COMBAT_CHARACTERS; // safety fallback
+
+       for(let i=0; i<20; i++) bDeckIds.push(botPool[Math.floor(Math.random() * botPool.length)].id);
        
        bDeck = createBattleDeck(bDeckIds);
        bHand = bDeck.slice(0, 7);
@@ -377,11 +440,14 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
        attempts++;
     }
 
+    // Extreme difficulty bot gets an extra prize card advantage
+    const botStartingPrizes = difficulty === 'extreme' ? 2 : 3;
+
     setPlayer({ deck: pDeck, hand: pHand, bench: [], active: null, prizes: 3, energyAttachedThisTurn: false, hasDrawnThisTurn: false });
-    setBot({ deck: bDeck, hand: bHand, bench: [], active: null, prizes: 3 });
-    setLog(["Battle started! Choose a Basic Character."]);
+    setBot({ deck: bDeck, hand: bHand, bench: [], active: null, prizes: botStartingPrizes });
+    setLog([`Battle started on ${difficulty.toUpperCase()} difficulty! Choose a Basic Character.`]);
     
-  }, [playerDeckIds]);
+  }, [playerDeckIds, difficulty]);
 
   useEffect(() => {
     if (gameState === 'botTurn' && bot && player) {
@@ -636,15 +702,19 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
   }
 
   if (gameState === 'gameOver') {
+    const rewards = { easy: 250, medium: 500, hard: 1000, extreme: 2500 };
+    const winAmount = rewards[difficulty];
+    const loseAmount = Math.floor(rewards[difficulty] * 0.1);
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center animate-in zoom-in-95 duration-500">
          <h2 className={`text-6xl font-black mb-8 tracking-[0.3em] drop-shadow-2xl ${winner === 'player' ? 'text-amber-400' : 'text-stone-500'}`}>
            {winner === 'player' ? 'VICTORY' : 'DEFEAT'}
          </h2>
          <p className="text-xl text-stone-300 mb-12">
-           {winner === 'player' ? 'You crushed the AI! +500 Coins' : 'The AI bested you. +50 Coins'}
+           {winner === 'player' ? `You crushed the ${difficulty} AI! +${winAmount} Coins` : `The AI bested you. +${loseAmount} Coins`}
          </p>
-         <button onClick={() => { winner === 'player' ? onWin() : onLose(); onExit(); }} className="px-12 py-4 bg-amber-600 text-white font-black tracking-widest rounded-full hover:bg-amber-500 hover:scale-105 shadow-2xl">
+         <button onClick={() => { winner === 'player' ? onWin(winAmount) : onLose(loseAmount); onExit(); }} className="px-12 py-4 bg-amber-600 text-white font-black tracking-widest rounded-full hover:bg-amber-500 hover:scale-105 shadow-2xl">
             COLLECT REWARD
          </button>
       </div>
@@ -785,11 +855,226 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit }) => {
 };
 
 
+// --- ONLINE LOBBY COMPONENT ---
+const OnlineLobby = ({ user, db, onStartMatch, setDbError }) => {
+   const [lobbyUsers, setLobbyUsers] = useState([]);
+   const [myStatus, setMyStatus] = useState(null); // The document from Firestore
+
+   useEffect(() => {
+      if (!user || !db) return;
+
+      // 1. Write myself into the lobby
+      const myRef = doc(getLobbyCol(db), user.uid);
+      const joinLobby = async () => {
+         try {
+             await setDoc(myRef, {
+                 uid: user.uid,
+                 name: user.displayName || `Player_${user.uid.substring(0,4)}`,
+                 status: 'idle',
+                 challengerId: null,
+                 matchId: null,
+                 lastSeen: Date.now()
+             });
+         } catch(e) {
+             console.error("Failed to join lobby", e);
+             setDbError(true);
+         }
+      };
+      joinLobby();
+
+      // 2. Heartbeat to keep myself "active"
+      const interval = setInterval(() => {
+          updateDoc(myRef, { lastSeen: Date.now() }).catch(() => {});
+      }, 15000);
+
+      // 3. Listen to all users in the lobby
+      const unsub = onSnapshot(getLobbyCol(db), (snap) => {
+          const now = Date.now();
+          const activeUsers = [];
+          snap.forEach(d => {
+              const data = d.data();
+              // Filter out users who haven't updated in 45 seconds (disconnected)
+              if (now - data.lastSeen < 45000) {
+                  activeUsers.push(data);
+              }
+              if (data.uid === user.uid) {
+                  setMyStatus(data);
+              }
+          });
+          setLobbyUsers(activeUsers.filter(u => u.uid !== user.uid));
+      }, (e) => {
+         console.error(e);
+         setDbError(true);
+      });
+
+      return () => {
+          clearInterval(interval);
+          unsub();
+          // Leave lobby on unmount
+          deleteDoc(myRef).catch(() => {});
+      };
+   }, [user, db, setDbError]);
+
+   useEffect(() => {
+      // If a match has been agreed upon, launch the arena!
+      if (myStatus && myStatus.matchId) {
+          onStartMatch(myStatus.matchId);
+      }
+   }, [myStatus, onStartMatch]);
+
+   const challengePlayer = async (targetId) => {
+      try {
+          const targetRef = doc(getLobbyCol(db), targetId);
+          await updateDoc(targetRef, {
+              challengerId: user.uid,
+              status: 'challenged'
+          });
+          // Update my own status to waiting
+          await updateDoc(doc(getLobbyCol(db), user.uid), {
+              status: 'waiting_for_accept'
+          });
+      } catch(e) { console.error(e); alert("Failed to send challenge"); }
+   };
+
+   const acceptChallenge = async () => {
+      try {
+          // 1. I am the Host. I create the match.
+          const matchesCol = getMatchesCol(db);
+          const newMatchRef = doc(matchesCol);
+          await setDoc(newMatchRef, {
+              hostId: user.uid, // I accepted, I host
+              guestId: myStatus.challengerId,
+              status: 'waiting_for_guest_deck', // Need guest to provide their deck
+              turn: user.uid, // Host goes first
+              players: {}, // We don't have decks yet, arena handles this
+              log: ["Match started! Waiting for players..."],
+              winner: null
+          });
+
+          const matchId = newMatchRef.id;
+
+          // 2. Update Challenger's lobby doc
+          await updateDoc(doc(getLobbyCol(db), myStatus.challengerId), {
+              matchId: matchId,
+              status: 'playing'
+          });
+
+          // 3. Update My lobby doc
+          await updateDoc(doc(getLobbyCol(db), user.uid), {
+              matchId: matchId,
+              status: 'playing',
+              challengerId: null
+          });
+      } catch(e) { console.error(e); alert("Failed to accept"); }
+   };
+
+   const declineChallenge = async () => {
+      try {
+          // Reset my status
+          await updateDoc(doc(getLobbyCol(db), user.uid), {
+              challengerId: null,
+              status: 'idle'
+          });
+          // Reset their status
+          await updateDoc(doc(getLobbyCol(db), myStatus.challengerId), {
+              status: 'idle'
+          });
+      } catch(e) { console.error(e); }
+   };
+
+   const cancelMyChallenge = async () => {
+       try {
+           // We don't easily know who we challenged without saving it, but we can just reset ourselves.
+           // A real app would track who we challenged to reset them too.
+           await updateDoc(doc(getLobbyCol(db), user.uid), {
+              status: 'idle'
+           });
+       } catch(e) { console.error(e); }
+   };
+
+   if (!myStatus) {
+       return <div className="flex-1 flex items-center justify-center"><Sparkles className="animate-spin text-fuchsia-500 w-12 h-12" /></div>;
+   }
+
+   return (
+       <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in duration-500">
+           <div className="w-full max-w-4xl bg-stone-900 border-2 border-fuchsia-900/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
+               <div className="bg-fuchsia-900/30 border-b border-fuchsia-900/50 p-6 sm:p-8 flex items-center gap-4">
+                  <Users className="w-8 h-8 sm:w-10 sm:h-10 text-fuchsia-400" />
+                  <div>
+                      <h2 className="text-2xl sm:text-4xl font-black tracking-widest text-white">ONLINE LOBBY</h2>
+                      <p className="text-fuchsia-400 font-bold text-sm sm:text-base">Find an opponent and battle for 1,000 Coins!</p>
+                  </div>
+               </div>
+
+               <div className="p-6 sm:p-8 flex-1 overflow-y-auto min-h-[400px]">
+                   
+                   {/* Challenge Popup Overlay */}
+                   {myStatus.challengerId && myStatus.status === 'challenged' && (
+                       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                           <div className="bg-stone-900 border-4 border-fuchsia-500 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(217,70,239,0.3)] animate-in zoom-in-95">
+                               <Zap className="w-16 h-16 text-fuchsia-500 mx-auto mb-4 animate-bounce" />
+                               <h3 className="text-2xl font-black text-white mb-2">NEW CHALLENGER!</h3>
+                               <p className="text-stone-400 mb-8">Someone wants to battle you.</p>
+                               <div className="flex gap-4 justify-center">
+                                   <button onClick={declineChallenge} className="px-6 py-3 bg-stone-800 hover:bg-stone-700 text-white font-bold rounded-full flex items-center gap-2"><X className="w-5 h-5"/> DECLINE</button>
+                                   <button onClick={acceptChallenge} className="px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-black tracking-widest rounded-full shadow-lg flex items-center gap-2"><Check className="w-5 h-5"/> ACCEPT</button>
+                               </div>
+                           </div>
+                       </div>
+                   )}
+
+                   {/* Waiting for response state */}
+                   {myStatus.status === 'waiting_for_accept' && (
+                       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                           <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl p-8 max-w-md w-full text-center">
+                               <Sparkles className="w-12 h-12 text-amber-500 mx-auto mb-4 animate-spin" />
+                               <h3 className="text-xl font-black text-white mb-6 tracking-widest">WAITING FOR OPPONENT...</h3>
+                               <button onClick={cancelMyChallenge} className="px-6 py-2 bg-stone-800 hover:bg-stone-700 text-white font-bold rounded-full">CANCEL</button>
+                           </div>
+                       </div>
+                   )}
+
+                   <div className="space-y-4">
+                       {lobbyUsers.length === 0 ? (
+                           <div className="text-center py-20 opacity-50">
+                               <Ghost className="w-16 h-16 mx-auto mb-4 text-stone-500" />
+                               <p className="font-bold tracking-widest">NO OTHER PLAYERS ONLINE</p>
+                           </div>
+                       ) : (
+                           lobbyUsers.map(u => (
+                               <div key={u.uid} className="flex items-center justify-between bg-stone-950 border border-stone-800 p-4 sm:p-6 rounded-2xl hover:border-fuchsia-900/50 transition-colors">
+                                   <div className="flex items-center gap-4">
+                                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-600 to-blue-600 flex items-center justify-center font-black text-lg shadow-inner">
+                                           {u.name.charAt(0).toUpperCase()}
+                                       </div>
+                                       <div>
+                                           <h4 className="font-bold text-white text-lg">{u.name}</h4>
+                                           <span className={`text-xs font-black tracking-widest ${u.status === 'idle' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                               {u.status === 'idle' ? 'READY TO BATTLE' : 'IN MENU'}
+                                           </span>
+                                       </div>
+                                   </div>
+                                   <button 
+                                      onClick={() => challengePlayer(u.uid)}
+                                      disabled={u.status !== 'idle'}
+                                      className="px-4 sm:px-6 py-2 sm:py-3 bg-fuchsia-600/20 text-fuchsia-400 border border-fuchsia-500/50 rounded-full font-black tracking-widest hover:bg-fuchsia-600 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                   >
+                                       CHALLENGE
+                                   </button>
+                               </div>
+                           ))
+                       )}
+                   </div>
+               </div>
+           </div>
+       </div>
+   );
+};
+
 // --- ONLINE BATTLE ARENA COMPONENT ---
-const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, setDbError }) => {
-  const [matchId, setMatchId] = useState(null);
+const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, existingMatchId }) => {
   const [matchData, setMatchData] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [selectedHandCard, setSelectedHandCard] = useState(null);
 
   const createBattleDeck = (idArray) => {
@@ -814,94 +1099,71 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, set
     return { deck: pDeck, hand: pHand, bench: [], active: null, prizes: 3, energyAttachedThisTurn: false, hasDrawnThisTurn: false };
   };
 
-  const findMatch = async () => {
-    setIsSearching(true);
-    try {
-        const matchesCol = getMatchesCol(db);
-        const snap = await getDocs(matchesCol); 
-        const waitingMatches = snap.docs.filter(d => d.data().status === 'waiting' && d.data().hostId !== user.uid);
-        
-        if (waitingMatches.length > 0) {
-            const matchDoc = waitingMatches[0];
-            await updateDoc(doc(matchesCol, matchDoc.id), {
-                guestId: user.uid,
-                status: 'playing',
-                [`players.${user.uid}`]: initializePlayerState(playerDeckIds),
-                log: [...matchDoc.data().log, "A Challenger appeared!"]
-            });
-            setMatchId(matchDoc.id);
-        } else {
-            const newMatchRef = doc(matchesCol);
-            await setDoc(newMatchRef, {
-                hostId: user.uid,
-                guestId: null,
-                status: 'waiting',
-                turn: user.uid,
-                players: { [user.uid]: initializePlayerState(playerDeckIds) },
-                log: ["Waiting for opponent..."],
-                winner: null
-            });
-            setMatchId(newMatchRef.id);
-        }
-    } catch(e) { 
-        console.error("Matchmaking Error:", e); 
-        setIsSearching(false); 
-        if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
-            setDbError(true);
-        } else {
-            alert("Matchmaking failed."); 
-        }
-    }
-  };
-
   useEffect(() => {
-    if (!matchId) return;
-    const unsub = onSnapshot(doc(getMatchesCol(db), matchId), (snap) => {
+    if (!existingMatchId) return;
+
+    // We enter here with a guaranteed matchId from the lobby.
+    // If we are the guest, we need to inject our deck.
+    const joinIfGuest = async () => {
+       const matchRef = doc(getMatchesCol(db), existingMatchId);
+       const snap = await getDoc(matchRef);
+       if (snap.exists()) {
+           const data = snap.data();
+           if (data.guestId === user.uid && (!data.players || !data.players[user.uid])) {
+               await updateDoc(matchRef, {
+                   [`players.${user.uid}`]: initializePlayerState(playerDeckIds),
+                   status: 'playing' // Now both have decks
+               });
+           } else if (data.hostId === user.uid && (!data.players || !data.players[user.uid])) {
+               // Host must also inject their deck upon entering
+               await updateDoc(matchRef, {
+                   [`players.${user.uid}`]: initializePlayerState(playerDeckIds)
+               });
+           }
+       }
+    };
+    joinIfGuest();
+
+    const unsub = onSnapshot(doc(getMatchesCol(db), existingMatchId), (snap) => {
         if (snap.exists()) {
             setMatchData(snap.data());
         } else {
-            setMatchData(null);
-            setMatchId(null);
-            setIsSearching(false);
             alert("Match ended abruptly.");
+            onExit();
         }
-    }, (err) => console.error(err));
+    });
     return () => unsub();
-  }, [matchId, db]);
+  }, [existingMatchId, db, user, playerDeckIds, onExit]);
 
   const updateMatch = async (updates) => {
      try {
-         await updateDoc(doc(getMatchesCol(db), matchId), updates);
+         await updateDoc(doc(getMatchesCol(db), existingMatchId), updates);
      } catch (e) { console.error("Sync failed", e); }
   };
 
-  if (!matchId) {
-     return (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6">
-           <Zap className="w-24 h-24 text-fuchsia-500 drop-shadow-[0_0_20px_rgba(217,70,239,0.5)]" />
-           <h2 className="text-4xl font-black tracking-widest text-white">ONLINE ARENA</h2>
-           <p className="text-stone-400">Battle real players. Win 1,000 Coins.</p>
-           <button onClick={findMatch} disabled={isSearching} className="mt-4 px-10 py-4 bg-fuchsia-600 hover:bg-fuchsia-500 rounded-full font-black tracking-widest text-white transition-all shadow-[0_0_30px_rgba(192,38,211,0.4)] disabled:opacity-50 hover:scale-105">
-              {isSearching ? 'SEARCHING...' : 'FIND MATCH'}
-           </button>
-        </div>
-     );
-  }
-
-  if (matchData?.status === 'waiting') {
+  if (!matchData || !matchData.players || !matchData.players[user.uid]) {
      return (
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
            <Sparkles className="w-16 h-16 text-fuchsia-500 animate-spin" />
-           <h2 className="text-3xl font-black tracking-widest text-white animate-pulse">WAITING FOR CHALLENGER...</h2>
+           <h2 className="text-3xl font-black tracking-widest text-white animate-pulse">CONNECTING TO ARENA...</h2>
         </div>
      );
   }
-
-  if (!matchData?.players || !matchData.players[user.uid]) return null;
 
   const me = matchData.players[user.uid];
   const opponentId = matchData.hostId === user.uid ? matchData.guestId : matchData.hostId;
   const opponent = opponentId ? matchData.players[opponentId] : null;
+  
+  // Don't start until both players have loaded decks
+  if (!opponent) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+           <Zap className="w-16 h-16 text-fuchsia-500 animate-bounce" />
+           <h2 className="text-2xl font-black tracking-widest text-white">WAITING FOR OPPONENT'S DECK...</h2>
+        </div>
+      );
+  }
+
   const isMyTurn = matchData.turn === user.uid && matchData.status === 'playing';
 
   const handleDraw = async () => {
@@ -1025,9 +1287,12 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, set
      if (matchData.status === 'playing') {
          await updateMatch({ winner: opponentId, status: 'gameover' });
      } else {
-         await deleteDoc(doc(getMatchesCol(db), matchId));
+         // Cleanup match doc if leaving early
+         deleteDoc(doc(getMatchesCol(db), existingMatchId)).catch(()=>{});
      }
-     setMatchId(null);
+     
+     // Remove matchId from my lobby doc so I go back to idle
+     updateDoc(doc(getLobbyCol(db), user.uid), { matchId: null, status: 'idle' }).catch(()=>{});
      onExit();
   };
 
@@ -1080,7 +1345,7 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, set
                ))}
             </div>
             <div className="w-28 h-40 border-2 border-fuchsia-900/50 rounded-xl flex items-center justify-center bg-stone-950 shadow-[0_0_20px_rgba(192,38,211,0.1)]">
-               {opponent?.active ? <TCGCard card={opponent.active} size="small" inBattle={true} /> : <span className="text-stone-700 text-xs text-center">WAITING ON OPPONENT</span>}
+               {opponent?.active ? <TCGCard card={opponent.active} size="small" inBattle={true} /> : <span className="text-stone-700 text-xs text-center">WAITING</span>}
             </div>
          </div>
       </div>
@@ -1158,12 +1423,17 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('shop'); 
   const [showRules, setShowRules] = useState(false);
   
-  // Cloud Save States
+  // Offline Battle State
+  const [battleDifficulty, setBattleDifficulty] = useState(null); // 'easy' | 'medium' | 'hard' | 'extreme'
+
+  // Cloud Save / Online States
   const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState(null);
   const [db, setDb] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [dbError, setDbError] = useState(false);
+  
+  const [onlineMatchId, setOnlineMatchId] = useState(null);
 
   useEffect(() => {
     try {
@@ -1325,6 +1595,13 @@ export default function App() {
     setDeck(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  // Switch tabs safely
+  const navTo = (tab) => {
+      setActiveTab(tab);
+      setBattleDifficulty(null);
+      setOnlineMatchId(null);
+  };
+
   // --- RENDERING SCREENS ---
 
   if (dbError) {
@@ -1420,19 +1697,19 @@ service cloud.firestore {
         </div>
         
         <div className="flex space-x-1 sm:space-x-2 bg-stone-950/60 p-1.5 sm:p-2 rounded-full border border-stone-800/80 shadow-inner overflow-x-auto no-scrollbar">
-          <button onClick={() => setActiveTab('shop')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'shop' ? 'bg-amber-500 text-stone-950 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'}`}>
+          <button onClick={() => navTo('shop')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'shop' ? 'bg-amber-500 text-stone-950 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'}`}>
             <Store className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">SHOP</span>
           </button>
-          <button onClick={() => setActiveTab('collection')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'collection' ? 'bg-amber-500 text-stone-950 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'}`}>
+          <button onClick={() => navTo('collection')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'collection' ? 'bg-amber-500 text-stone-950 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'}`}>
             <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">BINDER</span>
           </button>
-          <button onClick={() => setActiveTab('deck')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'deck' ? 'bg-amber-500 text-stone-950 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'}`}>
+          <button onClick={() => navTo('deck')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'deck' ? 'bg-amber-500 text-stone-950 shadow-[0_0_20px_rgba(245,158,11,0.5)]' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'}`}>
             <Layers className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">DECK</span>
           </button>
-          <button onClick={() => setActiveTab('battle')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'battle' ? 'bg-rose-600 text-white shadow-[0_0_20px_rgba(225,29,72,0.5)]' : 'text-stone-400 hover:text-rose-400 hover:bg-stone-800'}`}>
+          <button onClick={() => navTo('battle')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'battle' ? 'bg-rose-600 text-white shadow-[0_0_20px_rgba(225,29,72,0.5)]' : 'text-stone-400 hover:text-rose-400 hover:bg-stone-800'}`}>
             <Crosshair className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">BATTLE</span>
           </button>
-          <button onClick={() => setActiveTab('online')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-fuchsia-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.5)]' : 'text-stone-400 hover:text-fuchsia-400 hover:bg-stone-800'}`}>
+          <button onClick={() => navTo('online')} className={`flex items-center space-x-2 px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-fuchsia-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.5)]' : 'text-stone-400 hover:text-fuchsia-400 hover:bg-stone-800'}`}>
             <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">ONLINE</span>
           </button>
         </div>
@@ -1535,7 +1812,7 @@ service cloud.firestore {
                    </div>
                  ))}
                </div>
-               <button onClick={() => setActiveTab('shop')} className="px-10 sm:px-14 py-4 sm:py-5 bg-amber-600 text-white font-black text-lg sm:text-xl tracking-[0.2em] rounded-full hover:bg-amber-500 hover:scale-105 transition-all shadow-[0_0_40px_rgba(217,119,6,0.5)] border border-amber-400">
+               <button onClick={() => navTo('shop')} className="px-10 sm:px-14 py-4 sm:py-5 bg-amber-600 text-white font-black text-lg sm:text-xl tracking-[0.2em] rounded-full hover:bg-amber-500 hover:scale-105 transition-all shadow-[0_0_40px_rgba(217,119,6,0.5)] border border-amber-400">
                  RETURN TO SHOP
                </button>
              </div>
@@ -1651,7 +1928,7 @@ service cloud.firestore {
           );
         })()}
 
-        {/* BATTLE VIEW */}
+        {/* OFFLINE BATTLE VIEW */}
         {activeTab === 'battle' && (
           <div className="animate-in fade-in duration-500 flex-1 flex flex-col">
              {deck.length < 30 ? (
@@ -1659,20 +1936,50 @@ service cloud.firestore {
                    <ShieldAlert className="w-24 h-24 text-rose-500/50 animate-pulse" />
                    <h2 className="text-4xl font-black tracking-widest text-white">DECK INCOMPLETE</h2>
                    <p className="text-stone-400">You need exactly 30 cards in your deck to enter the Battle Arena.</p>
-                   <button onClick={() => setActiveTab('deck')} className="mt-4 px-8 py-3 bg-stone-800 hover:bg-stone-700 rounded-full font-bold text-white transition-colors">Go to Deck Builder</button>
+                   <button onClick={() => navTo('deck')} className="mt-4 px-8 py-3 bg-stone-800 hover:bg-stone-700 rounded-full font-bold text-white transition-colors">Go to Deck Builder</button>
                 </div>
-             ) : (
+             ) : battleDifficulty ? (
                 <BattleArena 
                   playerDeckIds={deck} 
-                  onWin={() => setCoins(c => c + 500)} 
-                  onLose={() => setCoins(c => c + 50)} 
-                  onExit={() => setActiveTab('shop')} 
+                  difficulty={battleDifficulty}
+                  onWin={(amt) => setCoins(c => c + amt)} 
+                  onLose={(amt) => setCoins(c => c + amt)} 
+                  onExit={() => navTo('shop')} 
                 />
+             ) : (
+                <div className="flex-1 flex flex-col items-center justify-center pb-10">
+                   <Swords className="w-20 h-20 text-rose-500 mb-6 drop-shadow-[0_0_20px_rgba(225,29,72,0.5)]" />
+                   <h2 className="text-4xl sm:text-6xl font-black tracking-widest text-white mb-2 drop-shadow-2xl">BATTLE ARENA</h2>
+                   <p className="text-stone-400 mb-12 text-lg">Select a difficulty. Harder bots yield greater coin rewards.</p>
+                   
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
+                      <button onClick={() => setBattleDifficulty('easy')} className="bg-stone-900 border-2 border-stone-700 hover:border-emerald-500 rounded-3xl p-8 flex flex-col items-center transition-all hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] group">
+                         <div className="w-16 h-16 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Check className="w-8 h-8" /></div>
+                         <h3 className="text-2xl font-black text-white tracking-widest mb-2">EASY</h3>
+                         <p className="text-stone-400 text-sm font-bold">Reward: 250 <Coins className="inline w-3 h-3 text-yellow-500 -mt-1"/></p>
+                      </button>
+                      <button onClick={() => setBattleDifficulty('medium')} className="bg-stone-900 border-2 border-stone-700 hover:border-amber-500 rounded-3xl p-8 flex flex-col items-center transition-all hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(245,158,11,0.3)] group">
+                         <div className="w-16 h-16 bg-amber-500/20 text-amber-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Layers className="w-8 h-8" /></div>
+                         <h3 className="text-2xl font-black text-white tracking-widest mb-2">MEDIUM</h3>
+                         <p className="text-stone-400 text-sm font-bold">Reward: 500 <Coins className="inline w-3 h-3 text-yellow-500 -mt-1"/></p>
+                      </button>
+                      <button onClick={() => setBattleDifficulty('hard')} className="bg-stone-900 border-2 border-stone-700 hover:border-rose-500 rounded-3xl p-8 flex flex-col items-center transition-all hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(225,29,72,0.3)] group">
+                         <div className="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Swords className="w-8 h-8" /></div>
+                         <h3 className="text-2xl font-black text-white tracking-widest mb-2">HARD</h3>
+                         <p className="text-stone-400 text-sm font-bold">Reward: 1000 <Coins className="inline w-3 h-3 text-yellow-500 -mt-1"/></p>
+                      </button>
+                      <button onClick={() => setBattleDifficulty('extreme')} className="bg-stone-900 border-2 border-stone-700 hover:border-fuchsia-500 rounded-3xl p-8 flex flex-col items-center transition-all hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(217,70,239,0.3)] group">
+                         <div className="w-16 h-16 bg-fuchsia-500/20 text-fuchsia-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><Skull className="w-8 h-8" /></div>
+                         <h3 className="text-2xl font-black text-white tracking-widest mb-2">EXTREME</h3>
+                         <p className="text-stone-400 text-sm font-bold">Reward: 2500 <Coins className="inline w-3 h-3 text-yellow-500 -mt-1"/></p>
+                      </button>
+                   </div>
+                </div>
              )}
           </div>
         )}
 
-        {/* ONLINE BATTLE VIEW */}
+        {/* ONLINE LOBBY / BATTLE VIEW */}
         {activeTab === 'online' && (
           <div className="animate-in fade-in duration-500 flex-1 flex flex-col">
              {deck.length < 30 ? (
@@ -1680,17 +1987,24 @@ service cloud.firestore {
                    <ShieldAlert className="w-24 h-24 text-fuchsia-500/50 animate-pulse" />
                    <h2 className="text-4xl font-black tracking-widest text-white">DECK INCOMPLETE</h2>
                    <p className="text-stone-400">You need exactly 30 cards in your deck to play online.</p>
-                   <button onClick={() => setActiveTab('deck')} className="mt-4 px-8 py-3 bg-stone-800 hover:bg-stone-700 rounded-full font-bold text-white transition-colors">Go to Deck Builder</button>
+                   <button onClick={() => navTo('deck')} className="mt-4 px-8 py-3 bg-stone-800 hover:bg-stone-700 rounded-full font-bold text-white transition-colors">Go to Deck Builder</button>
                 </div>
-             ) : (
+             ) : onlineMatchId ? (
                 <OnlineBattleArena 
                   playerDeckIds={deck} 
                   onWin={() => setCoins(c => c + 1000)} 
                   onLose={() => setCoins(c => c + 100)} 
-                  onExit={() => setActiveTab('shop')} 
+                  onExit={() => navTo('shop')} 
                   user={user}
                   db={db}
-                  setDbError={setDbError}
+                  existingMatchId={onlineMatchId}
+                />
+             ) : (
+                <OnlineLobby 
+                   user={user} 
+                   db={db} 
+                   setDbError={setDbError} 
+                   onStartMatch={(matchId) => setOnlineMatchId(matchId)}
                 />
              )}
           </div>
