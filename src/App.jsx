@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, getDocs, addDoc } from 'firebase/firestore';
 
 // --- GAME DATA & CONFIGURATION ---
 
@@ -191,14 +191,14 @@ const PACKS = [
     guaranteed: ['Rare'],
     set: 'mythos',
     featuredCardId: 'm_gx1'
-  },
+  }
+];
+
+const BOXES = [
   {
-    id: 'p5', name: 'Mythos God Pack', description: '10 Cards. The ultimate gamble. GUARANTEES 1 Legendary or GX!',
-    cost: 3000, cardCount: 10, color: 'from-yellow-400 via-amber-500 to-yellow-800',
-    dropRates: { Common: 0.40, Rare: 0.35, Epic: 0.15, Legendary: 0.08, GX: 0.02 },
-    guaranteed: ['Legendary', 'Epic', 'Rare', 'Rare'],
-    set: 'mythos',
-    featuredCardId: 'm_l1'
+    id: 'bx1', name: 'Mythos Collector Box', description: 'Includes 6 Mythos Packs, 1 Guaranteed Chronos GX, and 1 exclusive MASSIVE card!',
+    cost: 5000, color: 'from-purple-900 via-indigo-900 to-black',
+    packId: 'p4', promoId: 'm_gx1'
   }
 ];
 
@@ -227,7 +227,16 @@ const appId = typeof __app_id !== 'undefined' ? String(__app_id).replace(/\//g, 
 
 const getLobbyCol = (db) => collection(db, 'artifacts', appId, 'public', 'data', 'lobby');
 const getMatchesCol = (db) => collection(db, 'artifacts', appId, 'public', 'data', 'matches');
+const getTradesCol = (db) => collection(db, 'artifacts', appId, 'public', 'data', 'trades');
 const getSaveDocRef = (db, uid) => doc(db, 'artifacts', appId, 'users', uid, 'savedata', 'game');
+
+const getBaseCard = (id) => {
+    if (!id) return null;
+    const baseId = id.replace('_massive', '');
+    const card = CHARACTERS.find(c => c.id === baseId);
+    if (!card) return null;
+    return { ...card, id: id, isMassive: id.includes('_massive') };
+};
 
 const rollRarity = (dropRates) => {
   const roll = Math.random();
@@ -241,7 +250,6 @@ const rollRarity = (dropRates) => {
 
 const openPack = (pack) => {
   let pulled = [];
-  
   const setCards = COMBAT_CHARACTERS.filter(c => c.set === pack.set);
 
   pack.guaranteed.forEach(rarity => {
@@ -310,7 +318,10 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
     padding = 'p-1'; iconSize = 'w-8 h-8'; elementIconSize = 'w-2 h-2 hidden sm:block';
   }
 
+  if (card.isMassive && size === 'large') dims += ' scale-110';
+
   const selectionRing = isSelected ? 'ring-4 ring-amber-400 ring-offset-2 ring-offset-slate-900 scale-105 shadow-[0_0_30px_rgba(245,158,11,0.4)]' : '';
+  const massiveGlow = card.isMassive ? 'shadow-[0_0_40px_rgba(234,179,8,0.6)] border-yellow-400' : '';
 
   if (card.isEnergy) {
     return (
@@ -334,16 +345,25 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
 
   return (
     <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
-      <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d shadow-2xl rounded-3xl ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+      
+      {/* MASSIVE BADGE */}
+      {card.isMassive && isFlipped && (
+          <div className="absolute -top-3 -right-3 z-50 bg-gradient-to-r from-yellow-400 via-rose-500 to-fuchsia-500 text-white font-black px-3 py-1 rounded-full border-2 border-white transform rotate-12 shadow-[0_0_20px_rgba(244,63,94,0.8)] animate-pulse uppercase tracking-widest text-[0.6rem] sm:text-xs">
+              MASSIVE
+          </div>
+      )}
+
+      <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d rounded-3xl ${massiveGlow} ${card.isMassive && isFlipped ? 'shadow-[0_0_40px_rgba(234,179,8,0.6)]' : 'shadow-2xl'} ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
         
         {/* Front */}
-        <div className={`absolute w-full h-full backface-hidden rounded-3xl ${rarityStyle.outerBg} p-[2px] sm:p-1 ${size === 'large' ? 'shadow-[0_20px_50px_rgba(0,0,0,0.5)]' : ''}`} style={{ backfaceVisibility: 'hidden' }}>
-          <div className={`relative w-full h-full rounded-[1.3rem] sm:rounded-[1.6rem] bg-gradient-to-br ${rarityStyle.bg} flex flex-col overflow-hidden border border-white/10`}>
+        <div className={`absolute w-full h-full backface-hidden rounded-3xl ${rarityStyle.outerBg} p-[2px] sm:p-1 ${card.isMassive ? 'bg-gradient-to-br from-yellow-400 via-red-500 to-fuchsia-500' : ''}`} style={{ backfaceVisibility: 'hidden' }}>
+          <div className={`relative w-full h-full rounded-[1.3rem] sm:rounded-[1.6rem] bg-gradient-to-br ${rarityStyle.bg} flex flex-col overflow-hidden border border-white/10 ${card.isMassive ? 'border-yellow-200/50' : ''}`}>
             {rarityStyle.foil && <div className={`absolute inset-0 z-20 pointer-events-none mix-blend-overlay opacity-60 ${rarityStyle.foil}`}></div>}
+            {card.isMassive && <div className="absolute inset-0 z-20 pointer-events-none mix-blend-color-dodge bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-50 animate-pulse-slow"></div>}
 
             {/* Header */}
             <div className={`flex justify-between items-center ${padding} bg-white/40 backdrop-blur-md border-b border-white/20`}>
-              <h3 className={`font-black uppercase tracking-tight ${rarityStyle.color || 'text-slate-900'} ${size === 'large' ? 'text-2xl sm:text-3xl' : size === 'small' ? 'text-[0.6rem] sm:text-[0.8rem]' : 'text-[0.4rem] sm:text-[0.5rem]'} truncate max-w-[70%] drop-shadow-sm`}>{card.name}</h3>
+              <h3 className={`font-black uppercase tracking-tight ${rarityStyle.color || 'text-slate-900'} ${size === 'large' ? 'text-2xl sm:text-3xl' : size === 'small' ? 'text-[0.6rem] sm:text-[0.8rem]' : 'text-[0.4rem] sm:text-[0.5rem]'} truncate max-w-[70%] drop-shadow-sm ${card.isMassive ? 'text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-fuchsia-600 drop-shadow-none' : ''}`}>{card.name}</h3>
               <div className="flex items-center space-x-1 font-black text-rose-700 shrink-0 bg-white/60 px-1.5 py-0.5 rounded-full shadow-sm border border-white/50">
                 {size !== 'mini' && <span className="drop-shadow-sm">{card.hp} HP</span>}
                 <div className={`rounded-full bg-white p-0.5 shadow-sm`}>
@@ -355,7 +375,7 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
             {/* Art */}
             <div className={`flex-1 m-1.5 sm:m-2.5 border border-white/20 bg-gradient-to-br ${elementStyle.artBg} shadow-inner flex items-center justify-center relative overflow-hidden rounded-xl`}>
               <div className="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
-              <div className={`${iconSize} z-10 relative drop-shadow-[0_10px_15px_rgba(0,0,0,0.4)] group-hover:scale-110 transition-transform duration-500 ease-out`}>
+              <div className={`${iconSize} z-10 relative drop-shadow-[0_10px_15px_rgba(0,0,0,0.4)] group-hover:scale-110 transition-transform duration-500 ease-out ${card.isMassive ? 'scale-110 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]' : ''}`}>
                 <img src={card.imgSrc} alt={card.name} className={`w-full h-full object-contain ${elementStyle.imgFilter}`} />
               </div>
             </div>
@@ -420,7 +440,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
     const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
     
     const createBattleDeck = (idArray) => shuffle(idArray).map(id => {
-      const base = CHARACTERS.find(c => c.id === id);
+      const base = getBaseCard(id);
       return { ...base, instanceId: Math.random().toString(36).substr(2, 9), currentHp: base.hp, attachedEnergy: 0 };
     });
 
@@ -482,6 +502,18 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
   }, [playerDeckIds, difficulty]);
 
   useEffect(() => {
+    // FORCE PLAYER TO PROMOTE
+    if (gameState === 'playerTurn' && player && !player.active) {
+        const hasBasicInHand = player.hand.some(c => !c.isEnergy);
+        if (player.bench.filter(Boolean).length === 0 && !hasBasicInHand) {
+            addToLog("You have no more characters! You blacked out.");
+            setWinner('bot');
+            setGameState('gameOver');
+        }
+    }
+  }, [gameState, player]);
+
+  useEffect(() => {
     if (gameState === 'botTurn' && bot && player) {
       const executeBotTurn = async () => {
         addToLog("--- Bot's Turn ---");
@@ -508,16 +540,33 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
         setBot(currentBot);
         await new Promise(r => setTimeout(r, 1000));
 
+        // FORCE BOT TO PROMOTE IF NO ACTIVE
+        if (!currentBot.active) {
+            if (currentBot.bench.filter(Boolean).length > 0) {
+                const bIdx = currentBot.bench.findIndex(Boolean);
+                currentBot.active = currentBot.bench.splice(bIdx, 1)[0];
+                addToLog(`Bot promoted ${currentBot.active.name}.`);
+            } else {
+                const basicIdx = currentBot.hand.findIndex(c => !c.isEnergy);
+                if (basicIdx >= 0) {
+                    currentBot.active = currentBot.hand.splice(basicIdx, 1)[0];
+                    addToLog(`Bot played ${currentBot.active.name}.`);
+                } else {
+                    addToLog("Bot blacked out! Player wins!");
+                    setWinner('player');
+                    setGameState('gameOver');
+                    return;
+                }
+            }
+            setBot({...currentBot});
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
         let newHand = [];
         for (let card of currentBot.hand) {
           if (!card.isEnergy && currentBot.bench.length < 5) {
-             if (!currentBot.active) {
-                currentBot.active = card;
-                addToLog(`Bot promoted ${card.name} to Active.`);
-             } else {
-                currentBot.bench.push(card);
-                addToLog(`Bot played ${card.name} to bench.`);
-             }
+             currentBot.bench.push(card);
+             addToLog(`Bot played ${card.name} to bench.`);
           } else {
              newHand.push(card);
           }
@@ -535,7 +584,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
                currentBot.hand.splice(energyIndex, 1);
                addToLog(`Bot attached Energy to ${currentBot.active.name}.`);
            } else {
-               // Try to find a bench target that matches the element
                const validBenchTargetIndex = currentBot.bench.findIndex(c => c.element === botEnergyCard.element);
                if (validBenchTargetIndex >= 0) {
                    currentBot.bench[validBenchTargetIndex].attachedEnergy += 1;
@@ -683,7 +731,11 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
   };
 
   const handleAttack = () => {
-    if (gameState !== 'playerTurn' || !player.active || !bot.active) return;
+    if (gameState !== 'playerTurn' || !bot.active) return;
+    if (!player.active) {
+       showToast("You must promote an Active character!", 'error');
+       return;
+    }
     if (!player.hasDrawnThisTurn) {
        showToast("You must DRAW a card first! Click your deck.", 'error');
        return;
@@ -718,6 +770,10 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
 
   const passTurn = () => {
     if (gameState === 'playerTurn') {
+       if (!player.active) {
+           showToast("You must promote an Active character!", 'error');
+           return;
+       }
        if (!player.hasDrawnThisTurn) {
           showToast("You must DRAW a card before ending your turn! Click your deck.", 'error');
           return;
@@ -726,19 +782,6 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
        setGameState('botTurn');
     }
   };
-
-  useEffect(() => {
-    if (gameState === 'setup' && bot && !bot.active && bot.hand.length > 0) {
-       let currentBot = { ...bot, hand: [...bot.hand] };
-       let combatCards = currentBot.hand.filter(c => !c.isEnergy);
-       if (combatCards.length > 0) {
-          currentBot.active = combatCards[0];
-          currentBot.hand = currentBot.hand.filter(c => c.instanceId !== combatCards[0].instanceId);
-          setBot(currentBot);
-          if (player && player.active) setGameState('playerTurn');
-       }
-    }
-  }, [bot, gameState, player]);
 
   if (!player || !bot) {
     return <div className="flex-1 flex flex-col items-center justify-center">
@@ -791,7 +834,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
             {[...Array(Math.min(bot.hand.length, 5))].map((_, i) => <div key={i} className="w-6 h-10 bg-slate-800 rounded border border-slate-700 shadow-sm"></div>)}
          </div>
 
-         <div className="flex-1 flex flex-col items-center justify-center">
+         <div className="flex-1 flex flex-col items-center justify-center mt-6">
             <div className="flex gap-3 mb-6 h-24">
                {[...Array(5)].map((_, i) => (
                  <div key={i} className="w-16 h-24 border border-slate-700 rounded-xl flex items-center justify-center bg-slate-900/50 shadow-inner">
@@ -855,7 +898,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
                className={`w-28 h-40 border rounded-2xl flex items-center justify-center shadow-2xl mb-6 transition-all duration-300 cursor-pointer ${!player.active && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-amber-400 bg-amber-900/20 shadow-[0_0_30px_rgba(245,158,11,0.2)]' : player.active && selectedHandCard?.card.isEnergy && !player.energyAttachedThisTurn ? 'border-emerald-400 bg-emerald-900/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : 'border-slate-700 bg-slate-950/80'}`}
                onClick={() => handlePlayAreaClick('active')}
             >
-               {player.active ? <TCGCard card={player.active} size="small" inBattle={true} /> : <span className="text-slate-500 text-xs font-bold text-center p-2 uppercase tracking-widest">Play Active<br/>Character</span>}
+               {player.active ? <TCGCard card={player.active} size="small" inBattle={true} /> : <span className="text-slate-500 text-xs font-bold text-center p-2 uppercase tracking-widest">Play Active</span>}
             </div>
             
             <div className="flex gap-3 h-24">
@@ -946,9 +989,11 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
               }
           });
           setLobbyUsers(activeUsers.filter(u => u.uid !== user.uid));
-      }, (e) => {
-         console.error(e);
-         setDbError(true);
+      }, (err) => {
+         console.error(err);
+         if (err.message?.toLowerCase().includes('permission') || err.code === 'permission-denied') {
+             setDbError(true);
+         }
       });
 
       return () => {
@@ -976,7 +1021,11 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
           });
       } catch(e) { 
           console.error(e); 
-          showToast("Failed to send challenge", 'error'); 
+          if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+             setDbError(true);
+          } else {
+             showToast("Failed to send challenge", 'error'); 
+          }
       }
    };
 
@@ -1008,7 +1057,11 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
           });
       } catch(e) { 
           console.error(e); 
-          showToast("Failed to accept challenge", 'error'); 
+          if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+             setDbError(true);
+          } else {
+             showToast("Failed to accept challenge", 'error'); 
+          }
       }
    };
 
@@ -1021,7 +1074,10 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
           await updateDoc(doc(getLobbyCol(db), myStatus.challengerId), {
               status: 'idle'
           });
-      } catch(e) { console.error(e); }
+      } catch(e) { 
+          console.error(e); 
+          if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+      }
    };
 
    const cancelMyChallenge = async () => {
@@ -1029,7 +1085,10 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
            await updateDoc(doc(getLobbyCol(db), user.uid), {
               status: 'idle'
            });
-       } catch(e) { console.error(e); }
+       } catch(e) { 
+           console.error(e); 
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+       }
    };
 
    if (!myStatus) {
@@ -1118,14 +1177,14 @@ const OnlineLobby = ({ user, db, onStartMatch, setDbError, showToast }) => {
 };
 
 // --- ONLINE BATTLE ARENA COMPONENT ---
-const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, existingMatchId, showToast }) => {
+const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, existingMatchId, showToast, setDbError }) => {
   const [matchData, setMatchData] = useState(null);
   const [selectedHandCard, setSelectedHandCard] = useState(null);
 
   const createBattleDeck = (idArray) => {
     const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
     return shuffle(idArray).map(id => {
-      const base = CHARACTERS.find(c => c.id === id);
+      const base = getBaseCard(id);
       return { ...base, instanceId: Math.random().toString(36).substr(2, 9), currentHp: base.hp, attachedEnergy: 0 };
     });
   };
@@ -1149,19 +1208,24 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
 
     const joinIfGuest = async () => {
        const matchRef = doc(getMatchesCol(db), existingMatchId);
-       const snap = await getDoc(matchRef);
-       if (snap.exists()) {
-           const data = snap.data();
-           if (data.guestId === user.uid && (!data.players || !data.players[user.uid])) {
-               await updateDoc(matchRef, {
-                   [`players.${user.uid}`]: initializePlayerState(playerDeckIds),
-                   status: 'playing'
-               });
-           } else if (data.hostId === user.uid && (!data.players || !data.players[user.uid])) {
-               await updateDoc(matchRef, {
-                   [`players.${user.uid}`]: initializePlayerState(playerDeckIds)
-               });
+       try {
+           const snap = await getDoc(matchRef);
+           if (snap.exists()) {
+               const data = snap.data();
+               if (data.guestId === user.uid && (!data.players || !data.players[user.uid])) {
+                   await updateDoc(matchRef, {
+                       [`players.${user.uid}`]: initializePlayerState(playerDeckIds),
+                       status: 'playing'
+                   });
+               } else if (data.hostId === user.uid && (!data.players || !data.players[user.uid])) {
+                   await updateDoc(matchRef, {
+                       [`players.${user.uid}`]: initializePlayerState(playerDeckIds)
+                   });
+               }
            }
+       } catch (e) {
+           console.error(e);
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
        }
     };
     joinIfGuest();
@@ -1173,14 +1237,20 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
             showToast("Match ended abruptly.", 'error');
             onExit();
         }
+    }, (err) => {
+        console.error("Arena Snapshot Error", err);
+        if (err.message?.toLowerCase().includes('permission') || err.code === 'permission-denied') setDbError(true);
     });
     return () => unsub();
-  }, [existingMatchId, db, user, playerDeckIds, onExit, showToast]);
+  }, [existingMatchId, db, user, playerDeckIds, onExit, showToast, setDbError]);
 
   const updateMatch = async (updates) => {
      try {
          await updateDoc(doc(getMatchesCol(db), existingMatchId), updates);
-     } catch (e) { console.error("Sync failed", e); }
+     } catch (e) { 
+         console.error("Sync failed", e); 
+         if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+     }
   };
 
   if (!matchData || !matchData.players || !matchData.players[user.uid]) {
@@ -1206,6 +1276,16 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
   }
 
   const isMyTurn = matchData.turn === user.uid && matchData.status === 'playing';
+
+  // FORCE PLAYER TO PROMOTE ONLINE
+  useEffect(() => {
+    if (isMyTurn && !me.active) {
+        const hasBasicInHand = me.hand.some(c => !c.isEnergy);
+        if (me.bench.filter(Boolean).length === 0 && !hasBasicInHand) {
+            updateMatch({ winner: opponentId, status: 'gameover', log: [...matchData.log, "Player blacked out!"].slice(-10) });
+        }
+    }
+  }, [isMyTurn, me?.active, me?.bench, me?.hand, opponentId, matchData?.log]);
 
   const handleDraw = async () => {
     if (!isMyTurn || me.hasDrawnThisTurn) return;
@@ -1293,7 +1373,8 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
   };
 
   const handleAttack = async () => {
-    if (!isMyTurn || !me.active || !opponent?.active) return;
+    if (!isMyTurn || !opponent?.active) return;
+    if (!me.active) { showToast("You must promote an Active character!", 'error'); return; }
     if (!me.hasDrawnThisTurn) { showToast("You must DRAW first!", 'error'); return; }
     if (me.active.attachedEnergy < 1) { showToast("Need Energy!", 'error'); return; }
 
@@ -1323,7 +1404,9 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
   };
 
   const passTurn = async () => {
-    if (!isMyTurn || !me.hasDrawnThisTurn) { showToast("Draw a card first!", 'error'); return; }
+    if (!isMyTurn) return;
+    if (!me.active) { showToast("You must promote an Active character!", 'error'); return; }
+    if (!me.hasDrawnThisTurn) { showToast("Draw a card first!", 'error'); return; }
     await updateMatch({
         turn: opponentId,
         [`players.${user.uid}.energyAttachedThisTurn`]: false,
@@ -1464,9 +1547,226 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
 };
 
 
+// --- GLOBAL TRADE HUB COMPONENT ---
+const TradeHub = ({ user, db, collection: myCollection, setCollection, showToast, setDbError }) => {
+   const [openTrades, setOpenTrades] = useState([]);
+   const [offerCardId, setOfferCardId] = useState('');
+   const [reqCardId, setReqCardId] = useState('');
+   const [isPosting, setIsPosting] = useState(false);
+
+   // Listen for global open trades & MY completed trades
+   useEffect(() => {
+       if (!user || !db) return;
+       const unsub = onSnapshot(getTradesCol(db), (snap) => {
+           const open = [];
+           snap.docs.forEach(d => {
+               const t = d.data();
+               t.id = d.id;
+               if (t.status === 'open') {
+                   open.push(t);
+               } else if (t.status === 'completed' && t.offererId === user.uid) {
+                   // This is MY trade that someone just accepted! Claim the reward!
+                   setCollection(prev => {
+                       const next = { ...prev };
+                       next[t.reqId] = (next[t.reqId] || 0) + 1;
+                       return next;
+                   });
+                   showToast(`Trade completed! You received ${getBaseCard(t.reqId).name}!`, 'success');
+                   deleteDoc(d.ref).catch(()=>{});
+               }
+           });
+           setOpenTrades(open.sort((a,b) => b.timestamp - a.timestamp));
+       }, (err) => {
+           console.error("Trade Hub Error", err);
+           if (err.message?.toLowerCase().includes('permission') || err.code === 'permission-denied') setDbError(true);
+       });
+       return () => unsub();
+   }, [user, db, setCollection, showToast, setDbError]);
+
+   const postTrade = async () => {
+       if (!offerCardId || !reqCardId) return;
+       if (!myCollection[offerCardId] || myCollection[offerCardId] <= 0) {
+           showToast("You don't own the card you are trying to offer!", 'error');
+           return;
+       }
+       setIsPosting(true);
+       try {
+           // Deduct from local inventory immediately
+           setCollection(prev => {
+               const next = { ...prev };
+               next[offerCardId] -= 1;
+               return next;
+           });
+
+           await addDoc(getTradesCol(db), {
+               offererId: user.uid,
+               offererName: user.displayName || `Player_${user.uid.substring(0,4)}`,
+               offerId: offerCardId,
+               reqId: reqCardId,
+               status: 'open',
+               timestamp: Date.now()
+           });
+           showToast("Trade posted successfully!", 'success');
+           setOfferCardId('');
+           setReqCardId('');
+       } catch(e) {
+           console.error(e);
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') {
+              setDbError(true);
+           } else {
+              showToast("Failed to post trade.", 'error');
+           }
+       }
+       setIsPosting(false);
+   };
+
+   const cancelTrade = async (trade) => {
+       try {
+           // Refund card
+           setCollection(prev => {
+               const next = { ...prev };
+               next[trade.offerId] = (next[trade.offerId] || 0) + 1;
+               return next;
+           });
+           await deleteDoc(doc(getTradesCol(db), trade.id));
+           showToast("Trade cancelled.", 'info');
+       } catch(e) { 
+           console.error(e); 
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+           else showToast("Cancel failed", 'error'); 
+       }
+   };
+
+   const acceptTrade = async (trade) => {
+       if (!myCollection[trade.reqId] || myCollection[trade.reqId] <= 0) {
+           showToast("You do not own the requested card!", 'error');
+           return;
+       }
+       try {
+           // Swap cards in local inventory
+           setCollection(prev => {
+               const next = { ...prev };
+               next[trade.reqId] -= 1;
+               next[trade.offerId] = (next[trade.offerId] || 0) + 1;
+               return next;
+           });
+           
+           // Mark as completed so original offerer can claim it
+           await updateDoc(doc(getTradesCol(db), trade.id), { status: 'completed' });
+           showToast(`Trade accepted! You received ${getBaseCard(trade.offerId).name}.`, 'success');
+       } catch(e) { 
+           console.error(e); 
+           if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true);
+           else showToast("Accept failed", 'error'); 
+       }
+   };
+
+   // Prepare dropdown options
+   const myOwnedIds = Object.keys(myCollection).filter(id => myCollection[id] > 0);
+   const allCardsGrouped = {
+       "Genesis Set": CHARACTERS.filter(c => c.set === 'genesis'),
+       "Awakening Set": CHARACTERS.filter(c => c.set === 'awakening'),
+       "Voidfall Set": CHARACTERS.filter(c => c.set === 'voidfall'),
+       "Mythos Set": CHARACTERS.filter(c => c.set === 'mythos'),
+       "Energy Cards": ENERGY_CARDS
+   };
+
+   return (
+      <div className="flex-1 flex flex-col xl:flex-row gap-8 pb-10">
+         
+         {/* POST A TRADE PANEL */}
+         <div className="w-full xl:w-[450px] shrink-0 bg-slate-900/60 backdrop-blur-xl border border-blue-500/30 rounded-[2rem] p-6 shadow-[0_0_40px_rgba(59,130,246,0.1)] flex flex-col h-fit">
+            <h3 className="text-2xl font-black text-white tracking-widest mb-6 flex items-center gap-3"><ArrowRightLeft className="text-blue-500" /> CREATE TRADE</h3>
+            
+            <label className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Card to Offer (You give)</label>
+            <select value={offerCardId} onChange={e => setOfferCardId(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 mb-6">
+                <option value="">-- Select a card you own --</option>
+                {myOwnedIds.map(id => {
+                    const card = getBaseCard(id);
+                    if (!card) return null;
+                    return <option key={id} value={id}>{card.name} ({card.rarity}) x{myCollection[id]}</option>
+                })}
+            </select>
+
+            <label className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2">Card to Request (You want)</label>
+            <select value={reqCardId} onChange={e => setReqCardId(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-blue-500 mb-8">
+                <option value="">-- Select any card --</option>
+                {Object.entries(allCardsGrouped).map(([group, cards]) => (
+                   <optgroup key={group} label={group}>
+                       {cards.map(c => <option key={c.id} value={c.id}>{c.name} ({c.rarity})</option>)}
+                   </optgroup>
+                ))}
+            </select>
+
+            <button 
+                onClick={postTrade} 
+                disabled={!offerCardId || !reqCardId || isPosting}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black tracking-[0.2em] rounded-xl shadow-lg transition-all"
+            >
+                {isPosting ? 'POSTING...' : 'POST TRADE'}
+            </button>
+         </div>
+
+         {/* OPEN TRADES PANEL */}
+         <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] p-6 shadow-inner flex flex-col min-h-[500px]">
+             <h3 className="text-2xl font-black text-white tracking-widest mb-6">GLOBAL TRADES ({openTrades.length})</h3>
+             
+             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                 {openTrades.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center h-full opacity-50">
+                         <Ghost className="w-16 h-16 mb-4 text-slate-500" />
+                         <p className="font-bold tracking-widest uppercase">No open trades right now</p>
+                     </div>
+                 ) : (
+                     openTrades.map(trade => {
+                         const offerCard = getBaseCard(trade.offerId);
+                         const reqCard = getBaseCard(trade.reqId);
+                         const isMine = trade.offererId === user.uid;
+                         const canAccept = !isMine && myCollection[trade.reqId] > 0;
+
+                         return (
+                             <div key={trade.id} className="bg-slate-950/80 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-6 justify-between hover:border-blue-500/50 transition-colors">
+                                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                                     
+                                     {/* Offering */}
+                                     <div className="flex flex-col items-center">
+                                         <span className="text-[0.6rem] text-emerald-400 font-bold uppercase tracking-widest mb-1">Offering</span>
+                                         <div className="w-20"><TCGCard card={offerCard} size="small" /></div>
+                                     </div>
+
+                                     <ArrowRightLeft className="w-6 h-6 text-slate-600 rotate-90 sm:rotate-0" />
+
+                                     {/* Requesting */}
+                                     <div className="flex flex-col items-center">
+                                         <span className="text-[0.6rem] text-rose-400 font-bold uppercase tracking-widest mb-1">Requesting</span>
+                                         <div className="w-20"><TCGCard card={reqCard} size="small" /></div>
+                                     </div>
+                                 </div>
+
+                                 <div className="flex flex-col items-center sm:items-end w-full sm:w-auto mt-4 sm:mt-0">
+                                     <span className="text-slate-400 text-xs font-bold mb-3">{isMine ? 'Your Trade' : `Posted by ${trade.offererName}`}</span>
+                                     {isMine ? (
+                                         <button onClick={() => cancelTrade(trade)} className="w-full sm:w-auto px-6 py-2 bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white rounded-lg font-bold tracking-widest transition-colors">CANCEL</button>
+                                     ) : (
+                                         <button onClick={() => acceptTrade(trade)} disabled={!canAccept} className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white disabled:bg-slate-800 disabled:text-slate-600 rounded-lg font-black tracking-widest hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20 disabled:shadow-none">
+                                            {canAccept ? 'ACCEPT TRADE' : 'MISSING CARD'}
+                                         </button>
+                                     )}
+                                 </div>
+                             </div>
+                         )
+                     })
+                 )}
+             </div>
+         </div>
+      </div>
+   );
+};
+
+
 // --- MAIN APP COMPONENT ---
 export default function App() {
-  const [coins, setCoins] = useState(500);
+  const [coins, setCoins] = useState(500); // 500 starting coins
   const [collection, setCollection] = useState(INITIAL_COLLECTION);
   const [deck, setDeck] = useState(STARTER_DECK); 
   const [activeTab, setActiveTab] = useState('shop'); 
@@ -1603,41 +1903,70 @@ export default function App() {
   const [activePackName, setActivePackName] = useState('');
   
   // Unboxing Animation States
-  const [openingPack, setOpeningPack] = useState(null);
+  const [openingItem, setOpeningItem] = useState(null); // 'pack' or 'box' obj
   const [isUnboxing, setIsUnboxing] = useState(false);
   const [unboxStage, setUnboxStage] = useState('shake'); 
+
+  const startUnboxing = (pulledCards, itemObj, type) => {
+      setCurrentCards(pulledCards);
+      setActiveCardIndex(0);
+      setIsCardRevealed(false);
+      setShowSummary(false);
+      setActivePackName(itemObj.name);
+      
+      setOpeningItem({ ...itemObj, type });
+      setIsUnboxing(true);
+      setUnboxStage('shake');
+      setActiveTab('opening');
+
+      setTimeout(() => {
+          setUnboxStage('burst');
+          setTimeout(() => setIsUnboxing(false), 600); 
+      }, 1500); 
+  };
 
   const buyPack = (pack) => {
     if (coins >= pack.cost) {
       setCoins(prev => prev - pack.cost);
       const pulled = openPack(pack);
-      setCurrentCards(pulled);
-      setActiveCardIndex(0);
-      setIsCardRevealed(false);
-      setShowSummary(false);
-      setActivePackName(pack.name);
-      
-      setOpeningPack(pack);
-      setIsUnboxing(true);
-      setUnboxStage('shake');
-      setActiveTab('opening');
-
-      // Play unboxing animation sequence
-      setTimeout(() => {
-          setUnboxStage('burst');
-          setTimeout(() => {
-              setIsUnboxing(false);
-          }, 600); // Wait for burst animation to finish
-      }, 1500); // Wait for shaking to finish
+      startUnboxing(pulled, pack, 'pack');
       
       setCollection(prev => {
-        const newCol = { ...prev };
-        pulled.forEach(card => {
-          newCol[card.id] = (newCol[card.id] || 0) + 1;
-        });
-        return newCol;
+        const next = { ...prev };
+        pulled.forEach(card => next[card.id] = (next[card.id] || 0) + 1);
+        return next;
       });
     }
+  };
+
+  const buyBox = (box) => {
+      if (coins < box.cost) return;
+      setCoins(prev => prev - box.cost);
+
+      const pulled = [];
+      const packTemplate = PACKS.find(p => p.id === box.packId);
+      
+      // 6 Packs worth of cards
+      for(let i=0; i<6; i++) {
+          pulled.push(...openPack(packTemplate));
+      }
+
+      // 1 Guaranteed Promo
+      const promoBase = getBaseCard(box.promoId);
+      if (promoBase) pulled.push({ ...promoBase, instanceId: Math.random().toString(36).substr(2, 9) });
+
+      // 1 MASSIVE Rarity Card
+      const allRaresAndUp = COMBAT_CHARACTERS.filter(c => ['Rare','Epic','Legendary','GX'].includes(c.rarity));
+      const massiveBase = allRaresAndUp[Math.floor(Math.random() * allRaresAndUp.length)];
+      pulled.push({ ...massiveBase, id: massiveBase.id + '_massive', isMassive: true, instanceId: Math.random().toString(36).substr(2, 9) });
+
+      startUnboxing(pulled, box, 'box');
+
+      setCollection(prev => {
+         const next = {...prev};
+         pulled.forEach(c => next[c.id] = (next[c.id] || 0) + 1);
+         return next;
+      });
   };
 
   const handleCardInteraction = () => {
@@ -1651,6 +1980,11 @@ export default function App() {
         setShowSummary(true);
       }
     }
+  };
+
+  const handleRevealAll = () => {
+      setIsCardRevealed(true);
+      setShowSummary(true);
   };
 
   const MAX_DECK_SIZE = 30; 
@@ -1762,7 +2096,7 @@ service cloud.firestore {
       </div>
 
       {/* Navbar */}
-      <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl bg-slate-900/70 backdrop-blur-2xl border border-slate-700/50 p-2 sm:p-3 rounded-full z-50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex justify-between items-center">
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl bg-slate-900/70 backdrop-blur-2xl border border-slate-700/50 p-2 sm:p-3 rounded-full z-50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] flex justify-between items-center">
         <div className="flex items-center space-x-3 pl-4 sm:pl-6">
           <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-2 rounded-xl shadow-lg shadow-amber-500/20">
             <Layers className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950" />
@@ -1773,20 +2107,23 @@ service cloud.firestore {
         </div>
         
         <div className="flex space-x-1 sm:space-x-2 bg-slate-950/60 p-1.5 sm:p-2 rounded-full border border-slate-800/80 shadow-inner overflow-x-auto no-scrollbar">
-          <button onClick={() => navTo('shop')} className={`flex items-center space-x-2 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'shop' ? 'bg-slate-800 text-amber-400 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
-            <Store className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">SHOP</span>
+          <button onClick={() => navTo('shop')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'shop' ? 'bg-slate-800 text-amber-400 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
+            <Store className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">SHOP</span>
           </button>
-          <button onClick={() => navTo('collection')} className={`flex items-center space-x-2 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'collection' ? 'bg-slate-800 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
-            <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">BINDER</span>
+          <button onClick={() => navTo('collection')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'collection' ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
+            <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">BINDER</span>
           </button>
-          <button onClick={() => navTo('deck')} className={`flex items-center space-x-2 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'deck' ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
-            <Layers className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">DECK</span>
+          <button onClick={() => navTo('deck')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'deck' ? 'bg-slate-800 text-teal-400 border border-teal-500/30 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
+            <Layers className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">DECK</span>
           </button>
-          <button onClick={() => navTo('battle')} className={`flex items-center space-x-2 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'battle' ? 'bg-slate-800 text-rose-400 border border-rose-500/30 shadow-[0_0_15px_rgba(225,29,72,0.2)]' : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800/50 border border-transparent'}`}>
-            <Crosshair className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">BATTLE</span>
+          <button onClick={() => navTo('trades')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'trades' ? 'bg-slate-800 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'text-slate-400 hover:text-blue-400 hover:bg-slate-800/50 border border-transparent'}`}>
+            <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">TRADE</span>
           </button>
-          <button onClick={() => navTo('online')} className={`flex items-center space-x-2 px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-slate-800 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.2)]' : 'text-slate-400 hover:text-fuchsia-400 hover:bg-slate-800/50 border border-transparent'}`}>
-            <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden md:inline">ONLINE</span>
+          <button onClick={() => navTo('battle')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'battle' ? 'bg-slate-800 text-rose-400 border border-rose-500/30 shadow-[0_0_15px_rgba(225,29,72,0.2)]' : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800/50 border border-transparent'}`}>
+            <Crosshair className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">BATTLE</span>
+          </button>
+          <button onClick={() => navTo('online')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-slate-800 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.2)]' : 'text-slate-400 hover:text-fuchsia-400 hover:bg-slate-800/50 border border-transparent'}`}>
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">ONLINE</span>
           </button>
         </div>
 
@@ -1815,63 +2152,121 @@ service cloud.firestore {
               <h2 className="text-4xl sm:text-6xl font-black text-white mb-4 sm:mb-6 tracking-tighter drop-shadow-2xl">SHOP</h2>
               <p className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto px-4 font-medium tracking-wide">Pull mythic heroes. Gather elemental energy. Construct an unbeatable deck.</p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-7xl w-full gap-8 sm:gap-10 px-4">
-              {PACKS.map(pack => {
-                const featuredCard = CHARACTERS.find(c => c.id === pack.featuredCardId);
-                const elementStyle = featuredCard ? ELEMENTS[featuredCard.element] : null;
 
-                return (
-                <div key={pack.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-amber-500/50 transition-all hover:-translate-y-4 duration-300 flex flex-col">
-                  <div className={`h-56 sm:h-72 bg-gradient-to-b ${pack.color} flex flex-col items-center justify-center p-6 text-center relative overflow-hidden shrink-0`}>
-                     {/* Foil crimps top and bottom */}
-                     <div className="absolute top-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-b border-black/20"></div>
-                     <div className="absolute bottom-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-t border-white/20"></div>
+            {/* BOOSTER BOXES SECTION */}
+            <div className="w-full max-w-7xl mb-12 px-4">
+                <h3 className="text-2xl font-black text-slate-300 tracking-[0.2em] mb-6 flex items-center gap-3"><PackageOpen className="text-purple-500" /> BOOSTER BOXES</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {BOXES.map(box => {
+                        const promoCard = getBaseCard(box.promoId);
+                        const elementStyle = promoCard ? ELEMENTS[promoCard.element] : null;
 
-                     {/* Pack texture */}
-                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-40 mix-blend-overlay z-0"></div>
-                     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-black/30 pointer-events-none z-10 group-hover:opacity-50 transition-opacity"></div>
-                     
-                     {/* Featured Character Art */}
-                     {featuredCard && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out z-0 mt-4">
-                           <img src={featuredCard.imgSrc} className={`w-40 h-40 sm:w-52 sm:h-52 object-contain ${elementStyle?.imgFilter} drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]`} alt="Featured" />
+                        return (
+                        <div key={box.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-purple-500/30 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-purple-500 transition-all hover:-translate-y-4 duration-300 flex flex-col lg:flex-row">
+                            <div className={`w-full lg:w-1/2 h-56 lg:h-auto bg-gradient-to-b ${box.color} flex items-center justify-center p-6 text-center relative overflow-hidden shrink-0 border-r border-white/10`}>
+                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30 mix-blend-overlay z-0"></div>
+                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500"></div>
+                                
+                                {promoCard && (
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out z-0">
+                                        <img src={promoCard.imgSrc} className={`w-48 h-48 sm:w-64 sm:h-64 object-contain ${elementStyle?.imgFilter} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_0_40px_rgba(255,255,255,0.7)]`} alt="Featured" />
+                                    </div>
+                                )}
+                                <div className="z-10 bg-black/80 w-[120%] py-3 sm:py-4 backdrop-blur-md border-y border-white/20 transform -rotate-6 group-hover:-rotate-3 transition-transform duration-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
+                                    <h3 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-400 to-yellow-400 tracking-[0.2em] drop-shadow-lg uppercase">
+                                        {box.name}
+                                    </h3>
+                                </div>
+                            </div>
+                            <div className="p-6 sm:p-10 flex flex-col flex-1 justify-between bg-gradient-to-b from-slate-900 to-slate-950 relative z-20">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4 bg-purple-500/10 w-fit px-3 py-1 rounded-lg border border-purple-500/20">
+                                        <Sparkles className="w-4 h-4 text-purple-400" />
+                                        <span className="text-purple-400 font-bold tracking-widest text-xs uppercase">Premium Item</span>
+                                    </div>
+                                    <p className="text-slate-300 font-medium mb-6 sm:mb-8 text-base sm:text-lg leading-relaxed">{box.description}</p>
+                                </div>
+                                <button 
+                                onClick={() => buyBox(box)}
+                                disabled={coins < box.cost}
+                                className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${
+                                    coins >= box.cost 
+                                    ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)] hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] border border-purple-500/50' 
+                                    : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                }`}
+                                >
+                                <span>BUY BOX</span>
+                                <div className="flex items-center bg-black/30 px-3 sm:px-4 py-1.5 rounded-xl border border-white/10">
+                                    <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />
+                                    {box.cost.toLocaleString()}
+                                </div>
+                                </button>
+                            </div>
                         </div>
-                     )}
-
-                     {/* Pack Name Banner */}
-                     <div className="z-10 bg-black/70 w-[120%] py-3 sm:py-4 backdrop-blur-md border-y-2 border-white/20 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
-                        <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">
-                           {pack.name}
-                        </h3>
-                        {featuredCard && (
-                            <p className="text-[0.6rem] sm:text-xs text-amber-400 font-bold tracking-[0.3em] mt-1 uppercase opacity-80">
-                               Featuring {featuredCard.name}
-                            </p>
-                        )}
-                     </div>
-                  </div>
-                  <div className="p-6 sm:p-10 flex flex-col flex-1 justify-between bg-gradient-to-b from-slate-900 to-slate-950 relative z-20">
-                    <p className="text-slate-300 font-bold mb-6 sm:mb-8 text-center text-base sm:text-lg leading-relaxed">{pack.description}</p>
-                    
-                    <button 
-                      onClick={() => buyPack(pack)}
-                      disabled={coins < pack.cost}
-                      className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${
-                        coins >= pack.cost 
-                          ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_30px_rgba(217,119,6,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.5)] border border-amber-500/50' 
-                          : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'
-                      }`}
-                    >
-                      <span>PURCHASE</span>
-                      <div className="flex items-center bg-black/30 px-3 sm:px-4 py-1.5 rounded-xl border border-white/10">
-                        <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />
-                        {pack.cost}
-                      </div>
-                    </button>
-                  </div>
+                    )})}
                 </div>
-              )})}
+            </div>
+            
+            {/* BOOSTER PACKS SECTION */}
+            <div className="w-full max-w-7xl px-4">
+                <h3 className="text-2xl font-black text-slate-300 tracking-[0.2em] mb-6 flex items-center gap-3"><Layers className="text-amber-500" /> BOOSTER PACKS</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full gap-8 sm:gap-10">
+                {PACKS.map(pack => {
+                    const featuredCard = getBaseCard(pack.featuredCardId);
+                    const elementStyle = featuredCard ? ELEMENTS[featuredCard.element] : null;
+
+                    return (
+                    <div key={pack.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-amber-500/50 transition-all hover:-translate-y-4 duration-300 flex flex-col">
+                    <div className={`h-56 sm:h-72 bg-gradient-to-b ${pack.color} flex flex-col items-center justify-center p-6 text-center relative overflow-hidden shrink-0`}>
+                        {/* Foil crimps top and bottom */}
+                        <div className="absolute top-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-b border-black/20"></div>
+                        <div className="absolute bottom-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-t border-white/20"></div>
+
+                        {/* Pack texture */}
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-40 mix-blend-overlay z-0"></div>
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-black/30 pointer-events-none z-10 group-hover:opacity-50 transition-opacity"></div>
+                        
+                        {/* Featured Character Art */}
+                        {featuredCard && (
+                            <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out z-0 mt-4">
+                            <img src={featuredCard.imgSrc} className={`w-40 h-40 sm:w-52 sm:h-52 object-contain ${elementStyle?.imgFilter} drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]`} alt="Featured" />
+                            </div>
+                        )}
+
+                        {/* Pack Name Banner */}
+                        <div className="z-10 bg-black/70 w-[120%] py-3 sm:py-4 backdrop-blur-md border-y-2 border-white/20 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
+                            <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">
+                                {pack.name}
+                            </h3>
+                            {featuredCard && (
+                                <p className="text-[0.6rem] sm:text-xs text-amber-400 font-bold tracking-[0.3em] mt-1 uppercase opacity-80">
+                                Featuring {featuredCard.name}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    <div className="p-6 sm:p-10 flex flex-col flex-1 justify-between bg-gradient-to-b from-slate-900 to-slate-950 relative z-20">
+                        <p className="text-slate-300 font-medium mb-6 sm:mb-8 text-center text-base sm:text-lg leading-relaxed">{pack.description}</p>
+                        
+                        <button 
+                        onClick={() => buyPack(pack)}
+                        disabled={coins < pack.cost}
+                        className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${
+                            coins >= pack.cost 
+                            ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_30px_rgba(217,119,6,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.5)] border border-amber-500/50' 
+                            : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'
+                        }`}
+                        >
+                        <span>PURCHASE</span>
+                        <div className="flex items-center bg-black/30 px-3 sm:px-4 py-1.5 rounded-xl border border-white/10">
+                            <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />
+                            {pack.cost}
+                        </div>
+                        </button>
+                    </div>
+                    </div>
+                )})}
+                </div>
             </div>
           </div>
         )}
@@ -1880,29 +2275,35 @@ service cloud.firestore {
         {activeTab === 'opening' && (
            <div className="flex-1 flex flex-col items-center justify-center animate-in zoom-in-95 duration-500 relative">
              
-             {isUnboxing && openingPack ? (
+             {isUnboxing && openingItem ? (
                 <div className="flex flex-col items-center justify-center relative z-50">
                    <h2 className="text-3xl font-black text-white tracking-[0.2em] mb-12 animate-pulse drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">OPENING...</h2>
                    
                    {/* Background Explosion Glow */}
                    {unboxStage === 'burst' && (
-                       <div className="absolute inset-0 bg-amber-500 rounded-full blur-[100px] opacity-80 animate-in fade-in zoom-in duration-500"></div>
+                       <div className="absolute inset-0 bg-amber-500 rounded-full blur-[150px] opacity-90 animate-in fade-in zoom-in duration-500"></div>
                    )}
 
-                   <div className={`relative transition-all duration-300 w-64 sm:w-80 h-96 sm:h-[28rem] rounded-[2rem] shadow-[0_0_50px_rgba(255,255,255,0.2)] overflow-hidden flex flex-col ${unboxStage === 'shake' ? 'animate-pack-shake scale-105' : 'animate-pack-burst pointer-events-none'}`}>
-                      <div className={`flex-1 bg-gradient-to-b ${openingPack.color} flex flex-col items-center justify-center p-6 text-center relative overflow-hidden`}>
-                         <div className="absolute top-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-b border-black/20"></div>
-                         <div className="absolute bottom-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-t border-white/20"></div>
-                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-40 mix-blend-overlay z-0"></div>
+                   <div className={`relative transition-all duration-300 ${openingItem.type === 'box' ? 'w-80 sm:w-[28rem] h-64 sm:h-80' : 'w-64 sm:w-80 h-96 sm:h-[28rem]'} rounded-[2rem] shadow-[0_0_50px_rgba(255,255,255,0.2)] overflow-hidden flex flex-col ${unboxStage === 'shake' ? 'animate-pack-shake scale-105' : 'animate-pack-burst pointer-events-none'}`}>
+                      <div className={`flex-1 bg-gradient-to-b ${openingItem.color} flex flex-col items-center justify-center p-6 text-center relative overflow-hidden`}>
                          
-                         {openingPack.featuredCardId && (
-                             <div className="absolute inset-0 flex items-center justify-center opacity-100 z-0 drop-shadow-[0_0_40px_rgba(255,255,255,0.8)] scale-110">
-                                <img src={CHARACTERS.find(c => c.id === openingPack.featuredCardId)?.imgSrc} className="w-56 h-56 sm:w-72 sm:h-72 object-contain" alt="Featured" />
+                         {openingItem.type === 'pack' && (
+                             <>
+                                <div className="absolute top-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-b border-black/20"></div>
+                                <div className="absolute bottom-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-t border-white/20"></div>
+                             </>
+                         )}
+
+                         <div className={`absolute inset-0 ${openingItem.type === 'box' ? "bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" : "bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"} opacity-40 mix-blend-overlay z-0`}></div>
+                         
+                         {(openingItem.featuredCardId || openingItem.promoId) && (
+                             <div className={`absolute inset-0 flex items-center justify-center opacity-100 z-0 drop-shadow-[0_0_40px_rgba(255,255,255,0.8)] ${openingItem.type === 'box' ? 'scale-150 opacity-60' : 'scale-110'}`}>
+                                <img src={getBaseCard(openingItem.featuredCardId || openingItem.promoId)?.imgSrc} className="w-56 h-56 sm:w-72 sm:h-72 object-contain" alt="Featured" />
                              </div>
                          )}
                          <div className="z-10 bg-black/70 w-[120%] py-4 backdrop-blur-md border-y-2 border-white/20 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
                             <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">
-                               {openingPack.name}
+                               {openingItem.name}
                             </h3>
                          </div>
                       </div>
@@ -1912,7 +2313,7 @@ service cloud.firestore {
                 <>
                    <div className="text-center mb-10">
                      <h2 className="text-2xl sm:text-4xl font-black text-amber-500 tracking-[0.2em] drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">{activePackName}</h2>
-                     {!showSummary && (
+                     {!showSummary && currentCards.length <= 15 && (
                         <div className="mt-6 flex items-center justify-center space-x-3">
                           {[...Array(currentCards.length)].map((_, i) => (
                             <div key={i} className={`h-2 sm:h-3 rounded-full transition-all duration-500 ${i === activeCardIndex ? 'w-10 sm:w-16 bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.8)]' : i < activeCardIndex ? 'w-3 sm:w-4 bg-slate-700' : 'w-3 sm:w-4 bg-slate-800'}`} />
@@ -1926,22 +2327,29 @@ service cloud.firestore {
                        <div className="animate-in slide-in-from-bottom-10 fade-in duration-500">
                          <TCGCard key={activeCardIndex} card={currentCards[activeCardIndex]} isFlipped={isCardRevealed} size="large" onClick={handleCardInteraction} />
                        </div>
-                       <div className="h-24 mt-10 sm:mt-14 flex items-center justify-center">
+                       <div className="h-24 mt-10 sm:mt-14 flex items-center justify-center gap-4">
                          {isCardRevealed ? (
-                           <button onClick={handleCardInteraction} className="px-12 py-5 bg-amber-500 text-slate-950 font-black tracking-[0.2em] text-base sm:text-xl rounded-full hover:bg-amber-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(245,158,11,0.4)] border border-amber-300">
-                             {activeCardIndex < currentCards.length - 1 ? 'NEXT CARD' : 'FINISH'}
-                           </button>
+                           <>
+                             {currentCards.length > 10 && activeCardIndex < currentCards.length - 1 && (
+                                <button onClick={handleRevealAll} className="px-8 py-5 bg-slate-800 text-slate-300 font-black tracking-[0.2em] text-sm sm:text-base rounded-full hover:bg-slate-700 hover:text-white transition-all border border-slate-600">
+                                  REVEAL ALL
+                                </button>
+                             )}
+                             <button onClick={handleCardInteraction} className="px-12 py-5 bg-amber-500 text-slate-950 font-black tracking-[0.2em] text-base sm:text-xl rounded-full hover:bg-amber-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(245,158,11,0.4)] border border-amber-300">
+                               {activeCardIndex < currentCards.length - 1 ? 'NEXT CARD' : 'FINISH'}
+                             </button>
+                           </>
                          ) : (
                            <p className="text-slate-400 animate-pulse font-black tracking-[0.3em] text-lg sm:text-xl uppercase drop-shadow-md cursor-pointer hover:text-white" onClick={handleCardInteraction}>Tap to reveal</p>
                          )}
                        </div>
                      </div>
                    ) : (
-                     <div className="w-full max-w-7xl animate-in zoom-in-95 duration-500 flex flex-col items-center pb-16">
+                     <div className="w-full max-w-[90rem] animate-in zoom-in-95 duration-500 flex flex-col items-center pb-16">
                        <h3 className="text-3xl sm:text-5xl font-black text-white mb-10 sm:mb-16 tracking-[0.3em] text-center drop-shadow-2xl">SUMMARY</h3>
                        <div className="flex flex-wrap justify-center gap-6 sm:gap-10 mb-16 sm:mb-24">
                          {currentCards.map((card, index) => (
-                           <div key={card.instanceId} className="animate-in slide-in-from-bottom-12 fade-in hover:-translate-y-6 sm:hover:-translate-y-8 transition-transform duration-500 ease-out" style={{ animationDelay: `${index * 100}ms` }}>
+                           <div key={card.instanceId} className="animate-in slide-in-from-bottom-12 fade-in hover:-translate-y-6 sm:hover:-translate-y-8 transition-transform duration-500 ease-out" style={{ animationDelay: `${(index % 10) * 50}ms` }}>
                              <TCGCard card={card} isFlipped={true} size="small" />
                            </div>
                          ))}
@@ -1963,34 +2371,58 @@ service cloud.firestore {
              <div className="text-center sm:text-left">
                <h2 className="text-4xl sm:text-5xl font-black text-white mb-2 sm:mb-4 tracking-tighter drop-shadow-lg">CARD BINDER</h2>
                <div className="flex items-center justify-center sm:justify-start gap-3">
-                 <div className="bg-blue-500/20 px-3 py-1 rounded-md border border-blue-500/30">
-                    <p className="text-blue-400 font-black tracking-[0.2em] text-xs sm:text-sm">
+                 <div className="bg-emerald-500/20 px-3 py-1 rounded-md border border-emerald-500/30">
+                    <p className="text-emerald-400 font-black tracking-[0.2em] text-xs sm:text-sm">
                       {Object.keys(collection).length} / {CHARACTERS.length} UNIQUE CARDS
                     </p>
                  </div>
                </div>
              </div>
            </div>
+           
+           {/* Normal & Massive Cards Rendering Logic */}
            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8 lg:gap-10 pb-24">
              {CHARACTERS.map(char => {
+               // Render base card
                const count = collection[char.id] || 0;
                const isOwned = count > 0;
+               
+               // Check if they own the massive version of this card
+               const massiveId = char.id + '_massive';
+               const massiveCount = collection[massiveId] || 0;
+               const ownsMassive = massiveCount > 0;
+
                return (
-                 <div key={char.id} className="relative group">
-                   {isOwned && (
-                     <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-blue-500 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(59,130,246,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">
-                       {count}
-                     </div>
-                   )}
-                   <div className={`transition-all duration-500 ease-out ${!isOwned ? 'opacity-20 grayscale blur-[3px] hover:blur-none hover:opacity-50 hover:grayscale-0' : 'hover:-translate-y-4 hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)]'}`}>
-                      {isOwned ? <TCGCard card={char} size="small" isFlipped={true} /> : (
-                        <div className="w-full aspect-[2.5/3.6] bg-slate-900/50 border-2 border-dashed border-slate-700/50 rounded-[1.5rem] flex flex-col items-center justify-center p-4 sm:p-6 text-center backdrop-blur-sm">
-                           <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-slate-800 mb-2 sm:mb-4" />
-                           <span className="text-xs sm:text-sm text-slate-600 font-bold tracking-widest">LOCKED</span>
+                 <React.Fragment key={char.id}>
+                    {/* Base Card */}
+                    <div className="relative group">
+                    {isOwned && (
+                        <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-emerald-500 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(16,185,129,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">
+                        {count}
                         </div>
-                      )}
-                   </div>
-                 </div>
+                    )}
+                    <div className={`transition-all duration-500 ease-out ${!isOwned ? 'opacity-20 grayscale blur-[3px] hover:blur-none hover:opacity-50 hover:grayscale-0' : 'hover:-translate-y-4 hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)]'}`}>
+                        {isOwned ? <TCGCard card={char} size="small" isFlipped={true} /> : (
+                            <div className="w-full aspect-[2.5/3.6] bg-slate-900/50 border-2 border-dashed border-slate-700/50 rounded-[1.5rem] flex flex-col items-center justify-center p-4 sm:p-6 text-center backdrop-blur-sm">
+                            <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-slate-800 mb-2 sm:mb-4" />
+                            <span className="text-xs sm:text-sm text-slate-600 font-bold tracking-widest">LOCKED</span>
+                            </div>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* Render Massive version ONLY if they own it, placed right next to the base card */}
+                    {ownsMassive && (
+                        <div className="relative group" key={massiveId}>
+                            <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-yellow-400 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(250,204,21,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">
+                                {massiveCount}
+                            </div>
+                            <div className="transition-all duration-500 ease-out hover:-translate-y-4 hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+                                <TCGCard card={{...char, isMassive: true}} size="small" isFlipped={true} />
+                            </div>
+                        </div>
+                    )}
+                 </React.Fragment>
                );
              })}
            </div>
@@ -1999,15 +2431,14 @@ service cloud.firestore {
 
         {/* DECK VIEW */}
         {activeTab === 'deck' && (() => {
-          const deckChars = deck.map(id => CHARACTERS.find(c => c.id === id)).filter(Boolean);
-          const combatChars = deckChars.filter(c => !c.isEnergy);
+          const deckChars = deck.map(id => getBaseCard(id)).filter(Boolean);
           return (
           <div className="animate-in fade-in duration-500 flex flex-col pb-20">
             <div className="mb-6 sm:mb-10 border-b border-slate-800 pb-4 sm:pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-6">
                <div>
                  <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter flex items-center gap-4 drop-shadow-lg">BATTLE DECK</h2>
                </div>
-               <div className={`px-5 sm:px-6 py-2 sm:py-3 rounded-2xl border-2 flex items-center gap-3 font-black tracking-widest shadow-xl transition-colors ${deck.length === MAX_DECK_SIZE ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900/50 text-slate-400 border-slate-700/50'}`}>
+               <div className={`px-5 sm:px-6 py-2 sm:py-3 rounded-2xl border-2 flex items-center gap-3 font-black tracking-widest shadow-xl transition-colors ${deck.length === MAX_DECK_SIZE ? 'bg-teal-500/20 text-teal-400 border-teal-500/50 shadow-[0_0_20px_rgba(20,184,166,0.3)]' : 'bg-slate-900/50 text-slate-400 border-slate-700/50'}`}>
                  <Layers className="w-5 h-5 sm:w-6 sm:h-6" />
                  <span>{deck.length} / {MAX_DECK_SIZE}</span>
                </div>
@@ -2016,18 +2447,19 @@ service cloud.firestore {
             <div className="flex flex-col-reverse lg:flex-row gap-8 xl:gap-14">
               <div className="flex-1 bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-[2.5rem] p-6 sm:p-10 flex flex-col shadow-2xl">
                 <h3 className="text-sm sm:text-lg font-black text-slate-400 mb-6 sm:mb-8 tracking-[0.2em] uppercase flex items-center gap-3 bg-slate-950/50 w-fit px-4 py-2 rounded-xl border border-slate-800">
-                  <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" /> Available Collection
+                  <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5 text-teal-500" /> Available Collection
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-                  {CHARACTERS.map(char => {
-                    const ownedCount = collection[char.id] || 0;
-                    if (ownedCount === 0) return null; 
-                    const inDeckCount = deck.filter(id => id === char.id).length;
+                  {Object.keys(collection).filter(id => collection[id] > 0).map(id => {
+                    const char = getBaseCard(id);
+                    if (!char) return null;
+                    const ownedCount = collection[id] || 0;
+                    const inDeckCount = deck.filter(dId => dId === id).length;
                     const availableCount = ownedCount - inDeckCount;
                     const canAdd = availableCount > 0 && deck.length < MAX_DECK_SIZE;
                     return (
-                      <div key={char.id} className={`relative transition-all duration-300 ease-out ${canAdd ? 'cursor-pointer hover:-translate-y-4 hover:shadow-[0_20px_40px_rgba(16,185,129,0.2)]' : 'opacity-30 cursor-not-allowed grayscale'}`} onClick={() => canAdd && addToDeck(char.id)}>
-                        <div className={`absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-black z-20 shadow-2xl border-2 ${canAdd ? 'bg-emerald-500 text-slate-950 border-emerald-300' : 'bg-slate-800 text-slate-500 border-slate-600'}`}>
+                      <div key={id} className={`relative transition-all duration-300 ease-out ${canAdd ? 'cursor-pointer hover:-translate-y-4 hover:shadow-[0_20px_40px_rgba(20,184,166,0.2)]' : 'opacity-30 cursor-not-allowed grayscale'}`} onClick={() => canAdd && addToDeck(id)}>
+                        <div className={`absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-black z-20 shadow-2xl border-2 ${canAdd ? 'bg-teal-500 text-slate-950 border-teal-300' : 'bg-slate-800 text-slate-500 border-slate-600'}`}>
                           {availableCount}
                         </div>
                         <TCGCard card={char} size="small" isFlipped={true} />
@@ -2037,13 +2469,13 @@ service cloud.firestore {
                 </div>
               </div>
 
-              <div className="w-full lg:w-[400px] xl:w-[500px] bg-slate-900/60 backdrop-blur-2xl border border-emerald-900/50 shadow-[0_0_50px_rgba(16,185,129,0.1)] rounded-[2.5rem] p-6 sm:p-8 flex flex-col shrink-0 lg:sticky lg:top-32 h-fit max-h-[calc(100vh-140px)]">
+              <div className="w-full lg:w-[400px] xl:w-[500px] bg-slate-900/60 backdrop-blur-2xl border border-teal-900/50 shadow-[0_0_50px_rgba(20,184,166,0.1)] rounded-[2.5rem] p-6 sm:p-8 flex flex-col shrink-0 lg:sticky lg:top-32 h-fit max-h-[calc(100vh-140px)]">
                 <div className="flex-1 overflow-y-auto pr-2 sm:pr-4 custom-scrollbar">
                    <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-4 gap-3 sm:gap-4">
                       {[...Array(MAX_DECK_SIZE)].map((_, index) => {
                         const cardId = deck[index];
                         if (cardId) {
-                           const char = CHARACTERS.find(c => c.id === cardId);
+                           const char = getBaseCard(cardId);
                            return (
                              <div key={`slot-${index}-${cardId}`} className="relative cursor-pointer hover:scale-95 transition-transform group" onClick={() => removeFromDeck(index)}>
                                <div className="absolute inset-0 bg-rose-950/80 z-30 rounded-[1.3rem] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm border-2 border-rose-500/50 shadow-inner">
@@ -2054,8 +2486,8 @@ service cloud.firestore {
                            );
                         } else {
                            return (
-                             <div key={`empty-${index}`} className="w-full aspect-[2.5/3.6] bg-slate-950/40 border-2 border-dashed border-slate-700/50 rounded-[1.3rem] flex flex-col items-center justify-center p-2 text-center group transition-colors hover:border-emerald-500/30 hover:bg-emerald-950/20">
-                               <span className="text-slate-700 font-black text-xl sm:text-2xl opacity-50 group-hover:text-emerald-500/60 transition-colors">{index + 1}</span>
+                             <div key={`empty-${index}`} className="w-full aspect-[2.5/3.6] bg-slate-950/40 border-2 border-dashed border-slate-700/50 rounded-[1.3rem] flex flex-col items-center justify-center p-2 text-center group transition-colors hover:border-teal-500/30 hover:bg-teal-950/20">
+                               <span className="text-slate-700 font-black text-xl sm:text-2xl opacity-50 group-hover:text-teal-500/60 transition-colors">{index + 1}</span>
                              </div>
                            );
                         }
@@ -2067,6 +2499,11 @@ service cloud.firestore {
           </div>
           );
         })()}
+
+        {/* TRADE VIEW */}
+        {activeTab === 'trades' && (
+           <TradeHub user={user} db={db} collection={collection} setCollection={setCollection} showToast={showToast} setDbError={setDbError} />
+        )}
 
         {/* OFFLINE BATTLE VIEW */}
         {activeTab === 'battle' && (
@@ -2151,6 +2588,7 @@ service cloud.firestore {
                   db={db}
                   existingMatchId={onlineMatchId}
                   showToast={showToast}
+                  setDbError={setDbError}
                 />
              ) : (
                 <OnlineLobby 
@@ -2176,7 +2614,7 @@ service cloud.firestore {
         @keyframes pack-burst {
           0% { transform: scale(1.05); filter: brightness(1); opacity: 1; }
           40% { transform: scale(1.2); filter: brightness(2) contrast(1.5); opacity: 1; }
-          100% { transform: scale(2.5); filter: brightness(3); opacity: 0; }
+          100% { transform: scale(3.5); filter: brightness(3); opacity: 0; }
         }
         .animate-pack-shake { animation: pack-shake 0.3s cubic-bezier(.36,.07,.19,.97) infinite; }
         .animate-pack-burst { animation: pack-burst 0.6s ease-out forwards; }
