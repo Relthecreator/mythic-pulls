@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen, UserCircle
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, 
+  LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen, UserCircle, 
+  Trophy, BarChart3, Medal
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -66,30 +68,6 @@ const COMBAT_CHARACTERS = [
   { id: 'c13', set: 'genesis', name: 'Stardust', rarity: 'Common', element: 'Cosmic', hp: 30, attack: 'Twinkle', dmg: 20, ability: 'Wish', flavor: 'Fell from a comet.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=dust' },
   { id: 'c14', set: 'genesis', name: 'Pebble Pet', rarity: 'Common', element: 'Earth', hp: 70, attack: 'Roll', dmg: 10, ability: 'Hard Head', flavor: 'Lowest maintenance pet.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pebble' },
   
-  { id: 'r1', set: 'genesis', name: 'Pyromancer', rarity: 'Rare', element: 'Fire', hp: 80, attack: 'Fireball', dmg: 40, ability: 'Ignite: Deals 10 burn damage for 2 turns.', flavor: 'A mage obsessed with the dancing flames.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=flame' },
-  { id: 'r2', set: 'genesis', name: 'Phantom Maiden', rarity: 'Rare', element: 'Ghost', hp: 70, attack: 'Eerie Chill', dmg: 45, ability: 'Intimidate: Lowers enemy attack by 10.', flavor: 'A lingering spirit from a forgotten era.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=aqua' },
-  { id: 'r3', set: 'genesis', name: 'Voltage Mech', rarity: 'Rare', element: 'Electric', hp: 120, attack: 'Spark Plug', dmg: 30, ability: 'Overload: Double damage if below 30 HP.', flavor: 'A high-powered automaton running on raw electricity.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=golem' },
-  { id: 'r4', set: 'genesis', name: 'Zephyr Fairy', rarity: 'Rare', element: 'Wind', hp: 60, attack: 'Tornado Sweep', dmg: 50, ability: 'Gale Force: Switches out the enemy active card.', flavor: 'Dances inside hurricanes for fun.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=sprite' },
-  { id: 'r5', set: 'genesis', name: 'Aqua Knight', rarity: 'Rare', element: 'Water', hp: 90, attack: 'Wave Slash', dmg: 40, ability: 'Tide Shield: Blocks the next 20 damage.', flavor: 'Defends the sunken kingdoms with honor.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=aquaknight' },
-  { id: 'r6', set: 'genesis', name: 'Inferno Bot', rarity: 'Rare', element: 'Fire', hp: 100, attack: 'Heat Ray', dmg: 50, ability: 'Meltdown: Deals 30 damage to self and enemy on death.', flavor: 'Overheats frequently, but deals massive damage.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=inferno' },
-  { id: 'r7', set: 'genesis', name: 'Gale Glider', rarity: 'Rare', element: 'Wind', hp: 75, attack: 'Dive', dmg: 45, ability: 'First Strike: Always attacks first.', flavor: 'Never touches the ground if it can help it.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=glider' },
-  { id: 'r8', set: 'genesis', name: 'Lunar Owl', rarity: 'Rare', element: 'Cosmic', hp: 80, attack: 'Moonbeam', dmg: 55, ability: 'Foresight: Look at the top card of your deck.', flavor: 'Its hoot can be heard across the vacuum of space.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=owl' },
-  { id: 'r9', set: 'genesis', name: 'Terra Golem', rarity: 'Rare', element: 'Earth', hp: 140, attack: 'Quake', dmg: 35, ability: 'Tremor: Deals 10 damage to benched enemies.', flavor: 'A moving mountain of raw strength.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=terra' },
-  { id: 'r10', set: 'genesis', name: 'Plasma Core', rarity: 'Rare', element: 'Electric', hp: 90, attack: 'Shockwave', dmg: 60, ability: 'Chain Lightning: Hits a second enemy for half damage.', flavor: 'An unstable reactor just waiting to burst.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=plasma' },
-  
-  { id: 'e1', set: 'genesis', name: 'Shadow Automaton', rarity: 'Epic', element: 'Dark', hp: 100, attack: 'Dark Beam', dmg: 80, ability: 'Siphon: Heals for 50% of damage dealt.', flavor: 'Constructed from forbidden, abyssal technology.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=void' },
-  { id: 'e2', set: 'genesis', name: 'Dawn Paladin', rarity: 'Epic', element: 'Light', hp: 130, attack: 'Radiant Slash', dmg: 70, ability: 'Aura of Light: Allies take 10 less damage.', flavor: 'Draws power directly from the midday sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=solar' },
-  { id: 'e3', set: 'genesis', name: 'Iron Blademaster', rarity: 'Epic', element: 'Steel', hp: 90, attack: 'Omni-Slash', dmg: 90, ability: 'Pierce: Ignores enemy armor and shields.', flavor: 'Has mastered every weapon known to mankind.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=blade' },
-  { id: 'e4', set: 'genesis', name: 'Storm Bringer', rarity: 'Epic', element: 'Wind', hp: 110, attack: 'Hurricane', dmg: 85, ability: 'Cyclone: Shuffles enemy hand.', flavor: 'Summons storms with a flick of the wrist.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=storm' },
-  { id: 'e5', set: 'genesis', name: 'Abyssal Horror', rarity: 'Epic', element: 'Dark', hp: 140, attack: 'Void Crush', dmg: 95, ability: 'Terror: Enemies cannot heal while this is active.', flavor: 'Do not look into its eyes. Just don\'t.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=horror' },
-  { id: 'e6', set: 'genesis', name: 'Luminous Seraph', rarity: 'Epic', element: 'Light', hp: 120, attack: 'Holy Strike', dmg: 80, ability: 'Resurrect: Revives the first fainted ally with 30 HP.', flavor: 'Descends from the heavens to smite evil.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=seraph' },
-  
-  { id: 'l1', set: 'genesis', name: 'Nebula Construct', rarity: 'Legendary', element: 'Cosmic', hp: 180, attack: 'Supernova', dmg: 150, ability: 'Big Bang: Destroys all shields and buffs on the field.', flavor: 'An abstract entity born from a dying star.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=dragon' },
-  { id: 'l2', set: 'genesis', name: 'Astral Weaver', rarity: 'Legendary', element: 'Light', hp: 150, attack: 'Solar Flare', dmg: 140, ability: 'Reality Warp: Swap HP percentage with enemy once per game.', flavor: 'Spins new galaxies from stardust.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=star' },
-  { id: 'l3', set: 'genesis', name: 'Titan of the Deep', rarity: 'Legendary', element: 'Water', hp: 200, attack: 'Tsunami', dmg: 160, ability: 'Flood: Washes away all bench cards, forcing a reset.', flavor: 'Sleeps at the bottom of the Mariana Trench.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=titan' },
-
-  { id: 'gx1', set: 'genesis', name: 'Alpha Genesis GX', rarity: 'GX', element: 'Cosmic', hp: 280, attack: 'Omega Burst', dmg: 220, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The primordial force that birthed the elements.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=alpha' },
-
   // --- SET 2: AWAKENING ---
   { id: 'a_c1', set: 'awakening', name: 'Spore Fiend', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Leech', dmg: 15, ability: 'Heals', flavor: 'Thrives in caves.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=spore' },
   { id: 'a_c2', set: 'awakening', name: 'Aqua Pup', rarity: 'Common', element: 'Water', hp: 35, attack: 'Bite', dmg: 20, ability: 'Agile', flavor: 'Loyal companion.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=aquapup' },
@@ -161,7 +139,8 @@ const PACKS = [
 ];
 
 const BOXES = [
-  { id: 'bx1', name: 'Mythos Collector Box', description: 'Includes 6 Mythos Packs, 1 Guaranteed Chronos GX, and 1 exclusive MASSIVE card!', cost: 5000, color: 'from-purple-900 via-indigo-900 to-black', packId: 'p4', promoId: 'm_gx1' }
+  { id: 'bx1', name: 'Mythos Collector Box', description: 'Includes 6 Mythos Packs, 1 Guaranteed Chronos GX, and 1 exclusive MASSIVE card!', cost: 5000, color: 'from-purple-900 via-indigo-900 to-black', packId: 'p4', promoId: 'm_gx1', packCount: 6 },
+  { id: 'bx2', name: 'The Voidfall Vault', description: 'Includes 10 Voidfall Packs, 1 Guaranteed Chaos Bringer GX, and 1 exclusive MASSIVE card!', cost: 10000, color: 'from-slate-900 via-fuchsia-950 to-black', packId: 'p3', promoId: 'v_gx1', packCount: 10 }
 ];
 
 const STARTER_DECK = ['en_water','en_water','en_water','en_water','en_earth','en_earth','en_earth','en_earth','en_wind','en_wind','c1','c1','c1','c2','c2','c2','c3','c3','c5','c5','c5','c8','c8','c8','c11','c11','r5','r5','r9','r9'];
@@ -282,7 +261,7 @@ const ProfileSetup = ({ onComplete, user, db }) => {
         try {
             const usernameRef = doc(db, 'artifacts', appId, 'public', 'data', 'usernames', lowerUsername);
             await setDoc(usernameRef, { uid: user.uid, original: trimmed });
-            onComplete({ username: trimmed, avatar });
+            onComplete({ username: trimmed, avatar, wins: 0, losses: 0 }); // Init stats
         } catch (e) {
             console.error(e);
             setError(e.message?.toLowerCase().includes('permission') ? 'Database locked! Ask Admin to update security rules.' : 'Failed to verify username.');
@@ -970,6 +949,92 @@ const TradeHub = ({ user, db, collection: myCollection, setCollection, showToast
    );
 };
 
+// --- GLOBAL LEADERBOARD COMPONENT ---
+const Leaderboard = ({ db, setDbError }) => {
+    const [players, setPlayers] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!db) return;
+        const fetchLeaderboard = async () => {
+            try {
+                const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'players'));
+                const playerList = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.wins > 0 || data.losses > 0) {
+                        playerList.push(data);
+                    }
+                });
+                
+                playerList.sort((a, b) => (b.wins || 0) - (a.wins || 0));
+                setPlayers(playerList.slice(0, 50)); 
+                setLoading(false);
+            } catch (err) {
+                console.error("Leaderboard Error", err);
+                if (err.message?.toLowerCase().includes('permission') || err.code === 'permission-denied') setDbError(true);
+                setLoading(false);
+            }
+        };
+        fetchLeaderboard();
+    }, [db, setDbError]);
+
+    if (loading) return <div className="flex-1 flex items-center justify-center"><Sparkles className="animate-spin text-amber-500 w-12 h-12" /></div>;
+
+    return (
+        <div className="flex-1 flex flex-col items-center pb-10 px-4 animate-in fade-in duration-500">
+            <Trophy className="w-20 h-20 text-yellow-500 mb-6 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]" />
+            <h2 className="text-4xl sm:text-6xl font-black text-white tracking-widest mb-10 text-center drop-shadow-lg">GLOBAL RANKINGS</h2>
+            
+            <div className="w-full max-w-4xl bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 p-6 bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold text-xs sm:text-sm uppercase tracking-widest sticky top-0 z-10">
+                    <div className="col-span-2 sm:col-span-1 text-center">Rank</div>
+                    <div className="col-span-6 sm:col-span-7 pl-4">Player</div>
+                    <div className="col-span-4 text-center">Record</div>
+                </div>
+                
+                <div className="flex flex-col">
+                    {players.length === 0 ? (
+                        <div className="p-12 text-center text-slate-500 font-bold tracking-widest">No ranked players yet! Go win a battle!</div>
+                    ) : (
+                        players.map((p, idx) => {
+                            const totalGames = (p.wins || 0) + (p.losses || 0);
+                            const winRate = totalGames > 0 ? Math.round(((p.wins || 0) / totalGames) * 100) : 0;
+                            
+                            let rankStyle = "text-slate-400 bg-slate-800 border-slate-600";
+                            if (idx === 0) rankStyle = "text-yellow-950 bg-gradient-to-br from-yellow-300 to-yellow-500 border-yellow-200 shadow-[0_0_15px_rgba(234,179,8,0.6)]";
+                            if (idx === 1) rankStyle = "text-slate-900 bg-gradient-to-br from-slate-300 to-slate-400 border-slate-200";
+                            if (idx === 2) rankStyle = "text-amber-950 bg-gradient-to-br from-amber-600 to-amber-700 border-amber-500";
+
+                            return (
+                                <div key={p.uid} className="grid grid-cols-12 gap-4 p-4 sm:p-6 items-center border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                                    <div className="col-span-2 sm:col-span-1 flex justify-center">
+                                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-sm sm:text-base border-2 ${rankStyle}`}>
+                                            {idx + 1}
+                                        </div>
+                                    </div>
+                                    <div className="col-span-6 sm:col-span-7 flex items-center gap-4 pl-4">
+                                        <img src={p.avatar} alt="avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-slate-700 object-cover bg-black hidden sm:block" />
+                                        <span className={`font-bold sm:font-black text-sm sm:text-lg truncate ${idx === 0 ? 'text-yellow-400' : 'text-white'}`}>{p.username}</span>
+                                    </div>
+                                    <div className="col-span-4 flex flex-col items-center justify-center">
+                                        <div className="flex items-center gap-1 sm:gap-2">
+                                            <span className="text-emerald-400 font-black text-sm sm:text-lg">{p.wins || 0}W</span>
+                                            <span className="text-slate-600 font-black">-</span>
+                                            <span className="text-rose-400 font-black text-sm sm:text-lg">{p.losses || 0}L</span>
+                                        </div>
+                                        <span className="text-xs text-slate-500 font-bold tracking-widest mt-1">{winRate}% WIN</span>
+                                    </div>
+                                </div>
+                            )
+                        })
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- ONLINE LOBBY COMPONENT ---
 const OnlineLobby = ({ user, db, profile, onStartMatch, setDbError, showToast }) => {
    const [lobbyUsers, setLobbyUsers] = useState([]);
@@ -1347,6 +1412,7 @@ export default function App() {
   const [deck, setDeck] = useState(STARTER_DECK); 
   const [activeTab, setActiveTab] = useState('shop'); 
   const [showRules, setShowRules] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [toast, setToast] = useState(null);
   
   const [profile, setProfile] = useState(null);
@@ -1429,9 +1495,21 @@ export default function App() {
   }, [user, db]);
 
   useEffect(() => {
-     if (dataLoaded && user && db && !dbError && profile && !showProfileSetup) {
+     if (dataLoaded && user && db && profile && !showProfileSetup && !dbError) {
         const saveData = async () => {
-           try { await setDoc(getSaveDocRef(db, user.uid), { coins, collection, deck, profile }); } 
+           try { 
+               // Save Private Data
+               await setDoc(getSaveDocRef(db, user.uid), { coins, collection, deck, profile }); 
+               // Sync Public Leaderboard Data
+               await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', user.uid), {
+                   uid: user.uid,
+                   username: profile.username,
+                   avatar: profile.avatar,
+                   wins: profile.wins || 0,
+                   losses: profile.losses || 0,
+                   lastActive: Date.now()
+               });
+           } 
            catch(e) { console.error(e); if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true); }
         };
         saveData();
@@ -1486,7 +1564,9 @@ export default function App() {
       setCoins(prev => prev - box.cost);
       const pulled = [];
       const packTemplate = PACKS.find(p => p.id === box.packId);
-      for(let i=0; i<6; i++) pulled.push(...openPack(packTemplate));
+      const packCountToOpen = box.packCount || 6;
+      
+      for(let i=0; i<packCountToOpen; i++) pulled.push(...openPack(packTemplate));
       const promoBase = getBaseCard(box.promoId);
       if (promoBase) pulled.push({ ...promoBase, instanceId: Math.random().toString(36).substr(2, 9) });
       const allRaresAndUp = COMBAT_CHARACTERS.filter(c => ['Rare','Epic','Legendary','GX'].includes(c.rarity));
@@ -1517,7 +1597,19 @@ export default function App() {
   };
   const removeFromDeck = (indexToRemove) => setDeck(prev => prev.filter((_, idx) => idx !== indexToRemove));
 
-  const navTo = (tab) => { setActiveTab(tab); setBattleDifficulty(null); setOnlineMatchId(null); };
+  const navTo = (tab) => { setActiveTab(tab); setBattleDifficulty(null); setOnlineMatchId(null); setShowProfileModal(false); };
+
+  const handleGameResult = (isWin, amount) => {
+      setCoins(c => c + amount);
+      setProfile(p => {
+          if (!p) return null;
+          return {
+              ...p,
+              wins: isWin ? (p.wins || 0) + 1 : (p.wins || 0),
+              losses: !isWin ? (p.losses || 0) + 1 : (p.losses || 0)
+          };
+      });
+  };
 
   const isAdmin = profile?.username?.toLowerCase() === 'relthecreator';
 
@@ -1579,6 +1671,45 @@ service cloud.firestore {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 overflow-x-hidden relative flex flex-col">
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
+
+      {/* Player Stats Profile Modal */}
+      {showProfileModal && profile && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-300" onClick={() => setShowProfileModal(false)}>
+          <div className="bg-slate-900 border border-slate-700 rounded-[2rem] p-8 max-w-lg w-full flex flex-col items-center relative shadow-[0_0_50px_rgba(0,0,0,0.8)] text-center" onClick={e => e.stopPropagation()}>
+             <button onClick={() => setShowProfileModal(false)} className="absolute top-6 right-6 text-2xl font-black text-slate-500 hover:text-white transition-colors z-50"><X /></button>
+             
+             <img src={profile.avatar} alt="Profile" className="w-32 h-32 rounded-full border-4 border-slate-700 object-cover bg-black mb-6 shadow-2xl" />
+             <h2 className="text-4xl font-black text-white uppercase tracking-widest mb-10">{profile.username}</h2>
+             
+             <div className="grid grid-cols-2 gap-4 w-full mb-8">
+                 <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col items-center shadow-inner">
+                     <Swords className="w-8 h-8 text-amber-500 mb-2" />
+                     <span className="text-slate-500 text-xs font-bold tracking-widest uppercase mb-1">Win Rate</span>
+                     <span className="text-2xl font-black text-white">
+                         {((profile.wins || 0) + (profile.losses || 0)) > 0 
+                            ? Math.round(((profile.wins || 0) / ((profile.wins || 0) + (profile.losses || 0))) * 100) 
+                            : 0}%
+                     </span>
+                     <div className="text-xs font-bold text-slate-400 mt-2">
+                         <span className="text-emerald-400">{profile.wins || 0}W</span> - <span className="text-rose-400">{profile.losses || 0}L</span>
+                     </div>
+                 </div>
+                 <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 flex flex-col items-center shadow-inner">
+                     <Layers className="w-8 h-8 text-fuchsia-500 mb-2" />
+                     <span className="text-slate-500 text-xs font-bold tracking-widest uppercase mb-1">Collection</span>
+                     <span className="text-2xl font-black text-white">{Object.keys(collection).length}</span>
+                     <div className="text-xs font-bold text-yellow-400 mt-2">
+                         {Object.keys(collection).filter(id => id.includes('_massive')).length} MASSIVE
+                     </div>
+                 </div>
+             </div>
+             
+             <button onClick={() => { handleLogout(); setShowProfileModal(false); }} className="px-8 py-3 bg-rose-600/10 text-rose-500 border border-rose-500/30 hover:bg-rose-600 hover:text-white rounded-xl font-black tracking-widest transition-all w-full flex justify-center items-center gap-2">
+                 <LogOut className="w-5 h-5" /> SIGN OUT
+             </button>
+          </div>
+        </div>
+      )}
 
       {/* Card Inspection Modal */}
       {selectedBinderCard && (
@@ -1682,8 +1813,11 @@ service cloud.firestore {
           <button onClick={() => navTo('online')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'online' ? 'bg-slate-800 text-fuchsia-400 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.2)]' : 'text-slate-400 hover:text-fuchsia-400 hover:bg-slate-800/50 border border-transparent'}`}>
             <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">ONLINE</span>
           </button>
+          <button onClick={() => navTo('leaderboard')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'leaderboard' ? 'bg-slate-800 text-yellow-500 border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'text-slate-400 hover:text-yellow-500 hover:bg-slate-800/50 border border-transparent'}`}>
+            <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">RANKINGS</span>
+          </button>
           {isAdmin && (
-             <button onClick={() => navTo('admin')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'admin' ? 'bg-slate-800 text-yellow-400 border border-yellow-500/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]' : 'text-slate-400 hover:text-yellow-400 hover:bg-slate-800/50 border border-transparent'}`}>
+             <button onClick={() => navTo('admin')} className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-widest transition-all whitespace-nowrap ${activeTab === 'admin' ? 'bg-slate-800 text-amber-500 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'text-slate-400 hover:text-amber-500 hover:bg-slate-800/50 border border-transparent'}`}>
                 <Crown className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden xl:inline">ADMIN</span>
              </button>
           )}
@@ -1696,13 +1830,9 @@ service cloud.firestore {
              <span className="font-black text-amber-400 tracking-wide text-sm sm:text-base">{coins.toLocaleString()}</span>
           </div>
           <div className="w-px h-6 bg-slate-800 mx-1"></div>
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full pl-1 pr-2 py-1 relative group cursor-help">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full pl-1 pr-2 py-1 cursor-pointer hover:border-slate-500 transition-colors" onClick={() => setShowProfileModal(true)}>
              <img src={profile?.avatar} alt="Profile" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-slate-600 bg-black object-cover" />
              <span className="text-xs font-bold text-slate-300 hidden sm:block max-w-[100px] truncate">{profile?.username}</span>
-             <div className="absolute inset-0 bg-rose-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleLogout}>
-                 <LogOut className="w-4 h-4 text-white" />
-                 <span className="text-white text-xs font-bold ml-2 hidden sm:block">LOGOUT</span>
-             </div>
           </div>
         </div>
       </nav>
@@ -1745,6 +1875,11 @@ service cloud.firestore {
                  </button>
               </div>
            </div>
+        )}
+
+        {/* LEADERBOARD VIEW */}
+        {activeTab === 'leaderboard' && (
+           <Leaderboard db={db} setDbError={setDbError} />
         )}
 
         {/* SHOP VIEW */}
@@ -2162,8 +2297,8 @@ service cloud.firestore {
                 <BattleArena 
                   playerDeckIds={deck} 
                   difficulty={battleDifficulty}
-                  onWin={(amt) => setCoins(c => c + amt)} 
-                  onLose={(amt) => setCoins(c => c + amt)} 
+                  onWin={(amt) => handleGameResult(true, amt)} 
+                  onLose={(amt) => handleGameResult(false, amt)} 
                   onExit={() => navTo('shop')} 
                   showToast={showToast}
                 />
@@ -2224,8 +2359,8 @@ service cloud.firestore {
              ) : onlineMatchId ? (
                 <OnlineBattleArena 
                   playerDeckIds={deck} 
-                  onWin={() => setCoins(c => c + 1000)} 
-                  onLose={() => setCoins(c => c + 100)} 
+                  onWin={() => handleGameResult(true, 1000)} 
+                  onLose={() => handleGameResult(false, 100)} 
                   onExit={() => navTo('shop')} 
                   user={user}
                   db={db}
