@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Coins, Sparkles, Ghost, Flame, Droplet, Wind, Mountain, Moon, Sun, Star, 
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
-  Layers, Store, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen, UserCircle
+  Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen, UserCircle
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -51,53 +51,21 @@ const ENERGY_CARDS = Object.keys(ELEMENTS).map((el) => ({
 
 const COMBAT_CHARACTERS = [
   // --- SET 1: GENESIS ---
-  { id: 'c1', set: 'genesis', name: 'Water Bubble', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Cleanse: Removes burn effects.', flavor: 'A cheerful droplet of sentient water.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=slime' },
-  { id: 'c2', set: 'genesis', name: 'Desert Nomad', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Sand Throw', dmg: 20, ability: 'Scavenge: Finds 5 coins if it survives.', flavor: 'Wanders the endless dunes seeking treasure.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=goblin' },
-  { id: 'c3', set: 'genesis', name: 'Aero Prism', rarity: 'Common', element: 'Wind', hp: 30, attack: 'Sharp Gust', dmg: 15, ability: 'Evade: 10% chance to dodge attacks.', flavor: 'A floating crystal powered by the wind.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wisp' },
-  { id: 'c4', set: 'genesis', name: 'Scrap Drone', rarity: 'Common', element: 'Steel', hp: 70, attack: 'Wrench Toss', dmg: 20, ability: 'Plating: Reduces incoming damage by 5.', flavor: 'An outdated bot that still packs a punch.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=rusty' },
-  { id: 'c5', set: 'genesis', name: 'Mud Sludge', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Splat', dmg: 15, ability: 'Sticky: Lowers enemy speed.', flavor: 'A sentient puddle of thick mud.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=mud' },
-  { id: 'c6', set: 'genesis', name: 'Static Spark', rarity: 'Common', element: 'Electric', hp: 30, attack: 'Jolt', dmg: 25, ability: 'Shock: May stun enemy for 1 turn.', flavor: 'A tiny burst of rogue energy.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=spark' },
-  { id: 'c7', set: 'genesis', name: 'Ember Pup', rarity: 'Common', element: 'Fire', hp: 40, attack: 'Nip', dmg: 15, ability: 'Warmth: Heals adjacent allies by 5 HP.', flavor: 'Playful, but slightly too hot to pet.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=pup' },
-  { id: 'c8', set: 'genesis', name: 'Dew Drop', rarity: 'Common', element: 'Water', hp: 30, attack: 'Drip', dmg: 10, ability: 'Refresh: Restores 10 HP to self.', flavor: 'Reflects the morning light beautifully.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=dew' },
-  { id: 'c9', set: 'genesis', name: 'Shadow Imp', rarity: 'Common', element: 'Dark', hp: 45, attack: 'Scratch', dmg: 20, ability: 'Stealth: Cannot be targeted first turn.', flavor: 'Lurks just outside your peripheral vision.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=imp' },
-  { id: 'c10', set: 'genesis', name: 'Scout Bot', rarity: 'Common', element: 'Steel', hp: 60, attack: 'Scan', dmg: 15, ability: 'Reveal: Exposes enemy traps.', flavor: 'Beeps reassuringly while surveying.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=scout' },
-  { id: 'c11', set: 'genesis', name: 'Breeze Sprite', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Puff', dmg: 10, ability: 'Tailwind: +10 Speed to team.', flavor: 'Guides lost travelers to safety.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=breeze' },
-  { id: 'c12', set: 'genesis', name: 'Sun Mote', rarity: 'Common', element: 'Light', hp: 40, attack: 'Flash', dmg: 15, ability: 'Blind: Lowers enemy accuracy.', flavor: 'A concentrated beam of pure daylight.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=sun' },
-  { id: 'c13', set: 'genesis', name: 'Stardust', rarity: 'Common', element: 'Cosmic', hp: 30, attack: 'Twinkle', dmg: 20, ability: 'Wish: Draw an extra card next turn.', flavor: 'Fell from a comet thousands of years ago.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=dust' },
-  { id: 'c14', set: 'genesis', name: 'Pebble Pet', rarity: 'Common', element: 'Earth', hp: 70, attack: 'Roll', dmg: 10, ability: 'Hard Head: Immune to critical hits.', flavor: 'The lowest maintenance pet imaginable.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pebble' },
+  { id: 'c1', set: 'genesis', name: 'Water Bubble', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Cleanse', flavor: 'A cheerful droplet.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=slime' },
+  { id: 'c2', set: 'genesis', name: 'Desert Nomad', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Sand Throw', dmg: 20, ability: 'Scavenge', flavor: 'Wanders the dunes.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=goblin' },
+  { id: 'c3', set: 'genesis', name: 'Aero Prism', rarity: 'Common', element: 'Wind', hp: 30, attack: 'Sharp Gust', dmg: 15, ability: 'Evade', flavor: 'A floating crystal.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wisp' },
+  { id: 'c4', set: 'genesis', name: 'Scrap Drone', rarity: 'Common', element: 'Steel', hp: 70, attack: 'Wrench Toss', dmg: 20, ability: 'Plating', flavor: 'Outdated but strong.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=rusty' },
+  { id: 'c5', set: 'genesis', name: 'Mud Sludge', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Splat', dmg: 15, ability: 'Sticky', flavor: 'A puddle of thick mud.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=mud' },
+  { id: 'c6', set: 'genesis', name: 'Static Spark', rarity: 'Common', element: 'Electric', hp: 30, attack: 'Jolt', dmg: 25, ability: 'Shock', flavor: 'A tiny burst of energy.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=spark' },
+  { id: 'c7', set: 'genesis', name: 'Ember Pup', rarity: 'Common', element: 'Fire', hp: 40, attack: 'Nip', dmg: 15, ability: 'Warmth', flavor: 'Too hot to pet.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=pup' },
+  { id: 'c8', set: 'genesis', name: 'Dew Drop', rarity: 'Common', element: 'Water', hp: 30, attack: 'Drip', dmg: 10, ability: 'Refresh', flavor: 'Reflects morning light.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=dew' },
+  { id: 'c9', set: 'genesis', name: 'Shadow Imp', rarity: 'Common', element: 'Dark', hp: 45, attack: 'Scratch', dmg: 20, ability: 'Stealth', flavor: 'Lurks in shadows.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=imp' },
+  { id: 'c10', set: 'genesis', name: 'Scout Bot', rarity: 'Common', element: 'Steel', hp: 60, attack: 'Scan', dmg: 15, ability: 'Reveal', flavor: 'Beeps reassuringly.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=scout' },
+  { id: 'c11', set: 'genesis', name: 'Breeze Sprite', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Puff', dmg: 10, ability: 'Tailwind', flavor: 'Guides lost travelers.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=breeze' },
+  { id: 'c12', set: 'genesis', name: 'Sun Mote', rarity: 'Common', element: 'Light', hp: 40, attack: 'Flash', dmg: 15, ability: 'Blind', flavor: 'Pure daylight.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=sun' },
+  { id: 'c13', set: 'genesis', name: 'Stardust', rarity: 'Common', element: 'Cosmic', hp: 30, attack: 'Twinkle', dmg: 20, ability: 'Wish', flavor: 'Fell from a comet.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=dust' },
+  { id: 'c14', set: 'genesis', name: 'Pebble Pet', rarity: 'Common', element: 'Earth', hp: 70, attack: 'Roll', dmg: 10, ability: 'Hard Head', flavor: 'Lowest maintenance pet.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pebble' },
   
-  // --- SET 2: AWAKENING ---
-  { id: 'a_c1', set: 'awakening', name: 'Spore Fiend', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Leech', dmg: 15, ability: 'Heals self for 5 HP per hit.', flavor: 'Thrives in damp, dark caves.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=spore' },
-  { id: 'a_c2', set: 'awakening', name: 'Aqua Pup', rarity: 'Common', element: 'Water', hp: 35, attack: 'Bite', dmg: 20, ability: 'Agile: Hard to hit.', flavor: 'A loyal companion of the sea.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=aquapup' },
-  { id: 'a_c3', set: 'awakening', name: 'Ember Sprite', rarity: 'Common', element: 'Fire', hp: 30, attack: 'Cinder', dmg: 25, ability: 'Volatile: Explodes on death.', flavor: 'Leaves tiny scorch marks everywhere.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=ember' },
-  { id: 'a_c4', set: 'awakening', name: 'Static Bug', rarity: 'Common', element: 'Electric', hp: 40, attack: 'Zap', dmg: 15, ability: 'Swarm: +5 DMG for each bug on bench.', flavor: 'Attracted to high-voltage lines.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bug' },
-  { id: 'a_c5', set: 'awakening', name: 'Alloy Drone', rarity: 'Common', element: 'Steel', hp: 60, attack: 'Ram', dmg: 10, ability: 'Sturdy: Cannot be 1-hit KO\'d.', flavor: 'Mass produced for heavy labor.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=alloy' },
-  
-  // --- SET 3: VOIDFALL ---
-  { id: 'v_c1', set: 'voidfall', name: 'Void Slime', rarity: 'Common', element: 'Dark', hp: 50, attack: 'Absorb', dmg: 10, ability: 'Heals 10 HP every turn.', flavor: 'A puddle of pure dark matter.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=voidslime' },
-  { id: 'v_c2', set: 'voidfall', name: 'Cosmic Dust', rarity: 'Common', element: 'Cosmic', hp: 30, attack: 'Sparkle', dmg: 20, ability: 'Confuse: 10% chance enemy misses.', flavor: 'Remnants of a dead star.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cosmicdust' },
-  { id: 'v_c3', set: 'voidfall', name: 'Ghost Lantern', rarity: 'Common', element: 'Ghost', hp: 40, attack: 'Flicker', dmg: 25, ability: 'Spook: Enemy cannot use abilities next turn.', flavor: 'Guides lost souls to the abyss.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=lantern' },
-  { id: 'v_c4', set: 'voidfall', name: 'Meteor Hound', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Crater Bite', dmg: 20, ability: 'Tough: Takes 5 less damage.', flavor: 'Forged in the heart of a falling meteor.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=meteorhound' },
-  { id: 'v_c5', set: 'voidfall', name: 'Lunar Moth', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Moon Gust', dmg: 15, ability: 'Evade: 20% dodge chance.', flavor: 'Only flies under a full moon.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=lunarmoth' },
-
-  // --- SET 4: MYTHOS ---
-  { id: 'm_c1', set: 'mythos', name: 'Minotaur Calf', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Headbutt', dmg: 20, ability: 'Stubborn: Takes 5 less damage.', flavor: 'Small horns, big attitude.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=minotaur' },
-  { id: 'm_c2', set: 'mythos', name: 'Harpy Hatchling', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Screech', dmg: 15, ability: 'Annoy: Lowers enemy attack by 5.', flavor: 'Loud enough to wake the dead.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=harpy' },
-  { id: 'm_c3', set: 'mythos', name: 'River Nymph', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Soothe: Heals 5 HP to active ally.', flavor: 'Protects the sacred streams.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=nymph' },
-  { id: 'm_c4', set: 'mythos', name: 'Satyr Piper', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Melody', dmg: 15, ability: 'Lullaby: 10% chance to sleep enemy.', flavor: 'Always ready for a woodland party.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=satyr' },
-  { id: 'm_c5', set: 'mythos', name: 'Centaur Foal', rarity: 'Common', element: 'Wind', hp: 55, attack: 'Kick', dmg: 20, ability: 'Swift: Ignores retreat cost.', flavor: 'Faster than the plains wind.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=centaur' },
-  { id: 'm_c6', set: 'mythos', name: 'Siren Song', rarity: 'Common', element: 'Water', hp: 40, attack: 'Echo', dmg: 15, ability: 'Lure: Prevents enemy retreat.', flavor: 'A beautiful voice with deadly intent.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=siren' },
-  { id: 'm_c7', set: 'mythos', name: 'Cyclops Runt', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Stomp', dmg: 25, ability: 'Clumsy: 10% chance to hurt itself.', flavor: 'Only has one eye, still misses.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=cyclops' },
-  { id: 'm_c8', set: 'mythos', name: 'Basilisk Scale', rarity: 'Common', element: 'Dark', hp: 30, attack: 'Glare', dmg: 15, ability: 'Petrify: 5% chance to stun.', flavor: 'Don\'t look directly at it.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=basilisk' },
-  { id: 'm_c9', set: 'mythos', name: 'Gorgon Snake', rarity: 'Common', element: 'Dark', hp: 35, attack: 'Bite', dmg: 20, ability: 'Venom: Deals 5 damage end of turn.', flavor: 'Slipped away from Medusa\'s hair.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=snake' },
-  { id: 'm_c10', set: 'mythos', name: 'Chimera Cub', rarity: 'Common', element: 'Fire', hp: 50, attack: 'Spark', dmg: 15, ability: 'Hybrid: Counts as Fire and Dark.', flavor: 'Three heads, triple the trouble.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=chimera' },
-  { id: 'm_c11', set: 'mythos', name: 'Sphinx Riddle', rarity: 'Common', element: 'Light', hp: 45, attack: 'Confuse', dmg: 10, ability: 'Ponder: Opponent plays with hand revealed.', flavor: 'What walks on four legs in the morning?', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=sphinx' },
-  { id: 'm_c12', set: 'mythos', name: 'Pegasus Feather', rarity: 'Common', element: 'Wind', hp: 30, attack: 'Glide', dmg: 20, ability: 'Aero: Immune to Earth attacks.', flavor: 'Lighter than air itself.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pegasus' },
-  { id: 'm_c13', set: 'mythos', name: 'Griffin Claw', rarity: 'Common', element: 'Wind', hp: 40, attack: 'Swipe', dmg: 25, ability: 'Fierce: +5 damage vs Rares.', flavor: 'Half lion, half eagle, all dangerous.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=griffin' },
-  { id: 'm_c14', set: 'mythos', name: 'Kelpie Mane', rarity: 'Common', element: 'Water', hp: 50, attack: 'Drown', dmg: 20, ability: 'Tide: Water attacks do +5 damage.', flavor: 'A watery illusion of a horse.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=kelpie' },
-  { id: 'm_c15', set: 'mythos', name: 'Manticore Barb', rarity: 'Common', element: 'Fire', hp: 45, attack: 'Sting', dmg: 25, ability: 'Poison: 5 damage between turns.', flavor: 'A deadly tail from a mythical beast.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=manticore' },
-
-  // --- RARES, EPICS, LEGENDARIES, GX ---
   { id: 'r1', set: 'genesis', name: 'Pyromancer', rarity: 'Rare', element: 'Fire', hp: 80, attack: 'Fireball', dmg: 40, ability: 'Ignite: Deals 10 burn damage for 2 turns.', flavor: 'A mage obsessed with the dancing flames.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=flame' },
   { id: 'r2', set: 'genesis', name: 'Phantom Maiden', rarity: 'Rare', element: 'Ghost', hp: 70, attack: 'Eerie Chill', dmg: 45, ability: 'Intimidate: Lowers enemy attack by 10.', flavor: 'A lingering spirit from a forgotten era.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=aqua' },
   { id: 'r3', set: 'genesis', name: 'Voltage Mech', rarity: 'Rare', element: 'Electric', hp: 120, attack: 'Spark Plug', dmg: 30, ability: 'Overload: Double damage if below 30 HP.', flavor: 'A high-powered automaton running on raw electricity.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=golem' },
@@ -109,24 +77,6 @@ const COMBAT_CHARACTERS = [
   { id: 'r9', set: 'genesis', name: 'Terra Golem', rarity: 'Rare', element: 'Earth', hp: 140, attack: 'Quake', dmg: 35, ability: 'Tremor: Deals 10 damage to benched enemies.', flavor: 'A moving mountain of raw strength.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=terra' },
   { id: 'r10', set: 'genesis', name: 'Plasma Core', rarity: 'Rare', element: 'Electric', hp: 90, attack: 'Shockwave', dmg: 60, ability: 'Chain Lightning: Hits a second enemy for half damage.', flavor: 'An unstable reactor just waiting to burst.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=plasma' },
   
-  { id: 'a_r1', set: 'awakening', name: 'Forest Guardian', rarity: 'Rare', element: 'Earth', hp: 110, attack: 'Root Smash', dmg: 40, ability: 'Photosynthesis: Heals 10 HP every turn.', flavor: 'Ancient protector of the old woods.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=guardian' },
-  { id: 'a_r2', set: 'awakening', name: 'Tidal Serpent', rarity: 'Rare', element: 'Water', hp: 95, attack: 'Aqua Tail', dmg: 55, ability: 'Slippery: Ignores enemy abilities.', flavor: 'Rules the treacherous coral reefs.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=serpent' },
-  { id: 'a_r3', set: 'awakening', name: 'Flame Knight', rarity: 'Rare', element: 'Fire', hp: 100, attack: 'Blazing Sword', dmg: 60, ability: 'Honor: Does double DMG if you have fewer prizes.', flavor: 'Sworn to the order of the burning sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=flameknight' },
-  
-  { id: 'v_r1', set: 'voidfall', name: 'Astral Knight', rarity: 'Rare', element: 'Steel', hp: 100, attack: 'Star Slash', dmg: 50, ability: 'Armor: Blocks 10 damage per attack.', flavor: 'A guardian of the cosmic gates.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=astralknight' },
-  { id: 'v_r2', set: 'voidfall', name: 'Poltergeist', rarity: 'Rare', element: 'Ghost', hp: 80, attack: 'Telekinesis', dmg: 60, ability: 'Haunt: Deals 10 damage to enemy bench.', flavor: 'Throws whatever it can find.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=poltergeist' },
-  { id: 'v_r3', set: 'voidfall', name: 'Starfire Elemental', rarity: 'Rare', element: 'Fire', hp: 90, attack: 'Nova Blast', dmg: 70, ability: 'Overheat: Takes 10 damage after attacking.', flavor: 'Burns brighter than a supernova.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=starfire' },
-  
-  { id: 'm_r1', set: 'mythos', name: 'Cerberus', rarity: 'Rare', element: 'Dark', hp: 110, attack: 'Tri-Bite', dmg: 45, ability: 'Guard: Blocks retreat for opponent.', flavor: 'The three-headed hound of Hades.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cerberus' },
-  { id: 'm_r2', set: 'mythos', name: 'Hydra', rarity: 'Rare', element: 'Water', hp: 130, attack: 'Acid Spit', dmg: 40, ability: 'Regrow: Heals 10 HP when damaged.', flavor: 'Cut off one head, two more shall take its place.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=hydra' },
-  { id: 'm_r3', set: 'mythos', name: 'Kraken', rarity: 'Rare', element: 'Water', hp: 140, attack: 'Tentacle Smash', dmg: 50, ability: 'Drag Down: Discards opponent active energy.', flavor: 'Release the beast of the depths.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=kraken' },
-  { id: 'm_r4', set: 'mythos', name: 'Leviathan', rarity: 'Rare', element: 'Water', hp: 150, attack: 'Tidal Wave', dmg: 60, ability: 'Massive: Cannot be instantly KOd.', flavor: 'The undisputed king of the ocean.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=leviathan' },
-  { id: 'm_r5', set: 'mythos', name: 'Fenrir', rarity: 'Rare', element: 'Dark', hp: 120, attack: 'Wolf Bite', dmg: 65, ability: 'Unbound: Breaks through all shields.', flavor: 'The wolf destined to swallow the sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=fenrir' },
-  { id: 'm_r6', set: 'mythos', name: 'Valkyrie', rarity: 'Rare', element: 'Light', hp: 90, attack: 'Spear Dive', dmg: 55, ability: 'Valhalla: Revives self once with 10 HP.', flavor: 'Chooser of the slain.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=valkyrie' },
-  { id: 'm_r7', set: 'mythos', name: 'Wendigo', rarity: 'Rare', element: 'Ghost', hp: 100, attack: 'Frost Claw', dmg: 60, ability: 'Hunger: +10 damage for each prize card taken.', flavor: 'A spirit of winter and starvation.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wendigo' },
-  { id: 'm_r8', set: 'mythos', name: 'Thunderbird', rarity: 'Rare', element: 'Electric', hp: 110, attack: 'Lightning Strike', dmg: 70, ability: 'Storm: Deals 5 damage to all benched pokemon.', flavor: 'Lightning flashes with every flap of its wings.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=thunderbird' },
-  { id: 'm_r9', set: 'mythos', name: 'Kitsune', rarity: 'Rare', element: 'Fire', hp: 95, attack: 'Fox Fire', dmg: 50, ability: 'Illusion: Avoids attacks 25% of the time.', flavor: 'A nine-tailed spirit of trickery.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=kitsune' },
-
   { id: 'e1', set: 'genesis', name: 'Shadow Automaton', rarity: 'Epic', element: 'Dark', hp: 100, attack: 'Dark Beam', dmg: 80, ability: 'Siphon: Heals for 50% of damage dealt.', flavor: 'Constructed from forbidden, abyssal technology.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=void' },
   { id: 'e2', set: 'genesis', name: 'Dawn Paladin', rarity: 'Epic', element: 'Light', hp: 130, attack: 'Radiant Slash', dmg: 70, ability: 'Aura of Light: Allies take 10 less damage.', flavor: 'Draws power directly from the midday sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=solar' },
   { id: 'e3', set: 'genesis', name: 'Iron Blademaster', rarity: 'Epic', element: 'Steel', hp: 90, attack: 'Omni-Slash', dmg: 90, ability: 'Pierce: Ignores enemy armor and shields.', flavor: 'Has mastered every weapon known to mankind.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=blade' },
@@ -134,85 +84,71 @@ const COMBAT_CHARACTERS = [
   { id: 'e5', set: 'genesis', name: 'Abyssal Horror', rarity: 'Epic', element: 'Dark', hp: 140, attack: 'Void Crush', dmg: 95, ability: 'Terror: Enemies cannot heal while this is active.', flavor: 'Do not look into its eyes. Just don\'t.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=horror' },
   { id: 'e6', set: 'genesis', name: 'Luminous Seraph', rarity: 'Epic', element: 'Light', hp: 120, attack: 'Holy Strike', dmg: 80, ability: 'Resurrect: Revives the first fainted ally with 30 HP.', flavor: 'Descends from the heavens to smite evil.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=seraph' },
   
-  { id: 'a_e1', set: 'awakening', name: 'Thunder Wyrm', rarity: 'Epic', element: 'Electric', hp: 130, attack: 'Lightning Breath', dmg: 90, ability: 'Paralyze: Enemy misses next turn 50% of the time.', flavor: 'Storm clouds gather where it flies.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wyrm' },
-  { id: 'a_e2', set: 'awakening', name: 'Abyssal Warden', rarity: 'Epic', element: 'Dark', hp: 150, attack: 'Soul Drain', dmg: 75, ability: 'Dark Aura: All non-Dark cards lose 10 Max HP.', flavor: 'Keeper of the deepest dungeon.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=warden' },
-  
-  { id: 'v_e1', set: 'voidfall', name: 'Event Horizon', rarity: 'Epic', element: 'Dark', hp: 140, attack: 'Gravity Crush', dmg: 85, ability: 'Pull: Forces enemy to swap active card.', flavor: 'Nothing escapes its grasp.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=eventhorizon' },
-  { id: 'v_e2', set: 'voidfall', name: 'Supernova Spirit', rarity: 'Epic', element: 'Light', hp: 120, attack: 'Blinding Flash', dmg: 90, ability: 'Radiance: Heals all benched allies for 10.', flavor: 'The spectacular end of a massive star.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=supernovaspirit' },
-
-  { id: 'm_e1', set: 'mythos', name: 'Bahamut', rarity: 'Epic', element: 'Cosmic', hp: 160, attack: 'Mega Flare', dmg: 90, ability: 'Dragon King: Buffs all allied attacks by +10.', flavor: 'The platinum dragon of legend.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bahamut' },
-  { id: 'm_e2', set: 'mythos', name: 'Jormungandr', rarity: 'Epic', element: 'Water', hp: 170, attack: 'World Coil', dmg: 85, ability: 'Constrict: Enemy active cannot retreat.', flavor: 'The serpent that encircles the world.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=jormun' },
-  { id: 'm_e3', set: 'mythos', name: 'Quetzalcoatl', rarity: 'Epic', element: 'Wind', hp: 150, attack: 'Hurricane Breath', dmg: 80, ability: 'Feathered Serpent: Heals team 10 HP per turn.', flavor: 'The majestic deity of wind and wisdom.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=quetzal' },
-  { id: 'm_e4', set: 'mythos', name: 'Behemoth', rarity: 'Epic', element: 'Earth', hp: 180, attack: 'Earth Shatter', dmg: 95, ability: 'Unstoppable: Immune to all negative status effects.', flavor: 'The beast that shakes the earth.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=behemoth' },
-
   { id: 'l1', set: 'genesis', name: 'Nebula Construct', rarity: 'Legendary', element: 'Cosmic', hp: 180, attack: 'Supernova', dmg: 150, ability: 'Big Bang: Destroys all shields and buffs on the field.', flavor: 'An abstract entity born from a dying star.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=dragon' },
   { id: 'l2', set: 'genesis', name: 'Astral Weaver', rarity: 'Legendary', element: 'Light', hp: 150, attack: 'Solar Flare', dmg: 140, ability: 'Reality Warp: Swap HP percentage with enemy once per game.', flavor: 'Spins new galaxies from stardust.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=star' },
   { id: 'l3', set: 'genesis', name: 'Titan of the Deep', rarity: 'Legendary', element: 'Water', hp: 200, attack: 'Tsunami', dmg: 160, ability: 'Flood: Washes away all bench cards, forcing a reset.', flavor: 'Sleeps at the bottom of the Mariana Trench.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=titan' },
-  { id: 'a_l1', set: 'awakening', name: 'Solar Dragon', rarity: 'Legendary', element: 'Light', hp: 190, attack: 'Solar Beam', dmg: 140, ability: 'Purify: Clears all negative effects from your team.', flavor: 'Breathes life-giving warmth across the land.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=solardragon' },
-  { id: 'v_l1', set: 'voidfall', name: 'Void Leviathan', rarity: 'Legendary', element: 'Water', hp: 200, attack: 'Abyssal Maw', dmg: 130, ability: 'Consume: Instantly destroys any card under 40 HP.', flavor: 'Swallows entire planets whole.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=voidleviathan' },
-  { id: 'm_l1', set: 'mythos', name: 'Ouroboros', rarity: 'Legendary', element: 'Cosmic', hp: 220, attack: 'Eternal Cycle', dmg: 140, ability: 'Infinity: If knocked out, shuffles back into deck instead of discarding.', flavor: 'The snake eating its own tail. The infinite loop.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=ouroboros' },
 
   { id: 'gx1', set: 'genesis', name: 'Alpha Genesis GX', rarity: 'GX', element: 'Cosmic', hp: 280, attack: 'Omega Burst', dmg: 220, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The primordial force that birthed the elements.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=alpha' },
-  
+
   // --- SET 2: AWAKENING ---
-  { id: 'a_c1', set: 'awakening', name: 'Spore Fiend', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Leech', dmg: 15, ability: 'Heals self for 5 HP per hit.', flavor: 'Thrives in damp, dark caves.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=spore' },
-  { id: 'a_c2', set: 'awakening', name: 'Aqua Pup', rarity: 'Common', element: 'Water', hp: 35, attack: 'Bite', dmg: 20, ability: 'Agile: Hard to hit.', flavor: 'A loyal companion of the sea.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=aquapup' },
-  { id: 'a_c3', set: 'awakening', name: 'Ember Sprite', rarity: 'Common', element: 'Fire', hp: 30, attack: 'Cinder', dmg: 25, ability: 'Volatile: Explodes on death.', flavor: 'Leaves tiny scorch marks everywhere.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=ember' },
-  { id: 'a_c4', set: 'awakening', name: 'Static Bug', rarity: 'Common', element: 'Electric', hp: 40, attack: 'Zap', dmg: 15, ability: 'Swarm: +5 DMG for each bug on bench.', flavor: 'Attracted to high-voltage lines.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bug' },
-  { id: 'a_c5', set: 'awakening', name: 'Alloy Drone', rarity: 'Common', element: 'Steel', hp: 60, attack: 'Ram', dmg: 10, ability: 'Sturdy: Cannot be 1-hit KO\'d.', flavor: 'Mass produced for heavy labor.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=alloy' },
-  { id: 'a_r1', set: 'awakening', name: 'Forest Guardian', rarity: 'Rare', element: 'Earth', hp: 110, attack: 'Root Smash', dmg: 40, ability: 'Photosynthesis: Heals 10 HP every turn.', flavor: 'Ancient protector of the old woods.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=guardian' },
-  { id: 'a_r2', set: 'awakening', name: 'Tidal Serpent', rarity: 'Rare', element: 'Water', hp: 95, attack: 'Aqua Tail', dmg: 55, ability: 'Slippery: Ignores enemy abilities.', flavor: 'Rules the treacherous coral reefs.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=serpent' },
-  { id: 'a_r3', set: 'awakening', name: 'Flame Knight', rarity: 'Rare', element: 'Fire', hp: 100, attack: 'Blazing Sword', dmg: 60, ability: 'Honor: Does double DMG if you have fewer prizes.', flavor: 'Sworn to the order of the burning sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=flameknight' },
-  { id: 'a_e1', set: 'awakening', name: 'Thunder Wyrm', rarity: 'Epic', element: 'Electric', hp: 130, attack: 'Lightning Breath', dmg: 90, ability: 'Paralyze: Enemy misses next turn 50% of the time.', flavor: 'Storm clouds gather where it flies.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wyrm' },
-  { id: 'a_e2', set: 'awakening', name: 'Abyssal Warden', rarity: 'Epic', element: 'Dark', hp: 150, attack: 'Soul Drain', dmg: 75, ability: 'Dark Aura: All non-Dark cards lose 10 Max HP.', flavor: 'Keeper of the deepest dungeon.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=warden' },
-  { id: 'a_l1', set: 'awakening', name: 'Solar Dragon', rarity: 'Legendary', element: 'Light', hp: 190, attack: 'Solar Beam', dmg: 140, ability: 'Purify: Clears all negative effects from your team.', flavor: 'Breathes life-giving warmth across the land.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=solardragon' },
-  { id: 'a_gx1', set: 'awakening', name: 'Eclipse Necromancer GX', rarity: 'GX', element: 'Dark', hp: 260, attack: 'Shadow Oblivion', dmg: 200, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'Raises the fallen to block out the sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=necro' },
+  { id: 'a_c1', set: 'awakening', name: 'Spore Fiend', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Leech', dmg: 15, ability: 'Heals', flavor: 'Thrives in caves.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=spore' },
+  { id: 'a_c2', set: 'awakening', name: 'Aqua Pup', rarity: 'Common', element: 'Water', hp: 35, attack: 'Bite', dmg: 20, ability: 'Agile', flavor: 'Loyal companion.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=aquapup' },
+  { id: 'a_c3', set: 'awakening', name: 'Ember Sprite', rarity: 'Common', element: 'Fire', hp: 30, attack: 'Cinder', dmg: 25, ability: 'Volatile', flavor: 'Leaves scorch marks.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=ember' },
+  { id: 'a_c4', set: 'awakening', name: 'Static Bug', rarity: 'Common', element: 'Electric', hp: 40, attack: 'Zap', dmg: 15, ability: 'Swarm', flavor: 'Attracted to voltage.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bug' },
+  { id: 'a_c5', set: 'awakening', name: 'Alloy Drone', rarity: 'Common', element: 'Steel', hp: 60, attack: 'Ram', dmg: 10, ability: 'Sturdy', flavor: 'Mass produced.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=alloy' },
+  { id: 'a_r1', set: 'awakening', name: 'Forest Guardian', rarity: 'Rare', element: 'Earth', hp: 110, attack: 'Root Smash', dmg: 40, ability: 'Photosynthesis', flavor: 'Ancient protector.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=guardian' },
+  { id: 'a_r2', set: 'awakening', name: 'Tidal Serpent', rarity: 'Rare', element: 'Water', hp: 95, attack: 'Aqua Tail', dmg: 55, ability: 'Slippery', flavor: 'Treacherous reefs.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=serpent' },
+  { id: 'a_r3', set: 'awakening', name: 'Flame Knight', rarity: 'Rare', element: 'Fire', hp: 100, attack: 'Blazing Sword', dmg: 60, ability: 'Honor', flavor: 'Burning sun order.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=flameknight' },
+  { id: 'a_e1', set: 'awakening', name: 'Thunder Wyrm', rarity: 'Epic', element: 'Electric', hp: 130, attack: 'Lightning Breath', dmg: 90, ability: 'Paralyze', flavor: 'Storm clouds gather.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wyrm' },
+  { id: 'a_e2', set: 'awakening', name: 'Abyssal Warden', rarity: 'Epic', element: 'Dark', hp: 150, attack: 'Soul Drain', dmg: 75, ability: 'Dark Aura', flavor: 'Deepest dungeon.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=warden' },
+  { id: 'a_l1', set: 'awakening', name: 'Solar Dragon', rarity: 'Legendary', element: 'Light', hp: 190, attack: 'Solar Beam', dmg: 140, ability: 'Purify', flavor: 'Life-giving warmth.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=solardragon' },
+  { id: 'a_gx1', set: 'awakening', name: 'Eclipse Necromancer GX', rarity: 'GX', element: 'Dark', hp: 260, attack: 'Shadow Oblivion', dmg: 200, ability: 'GX Rule', flavor: 'Blocks out the sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=necro' },
 
   // --- SET 3: VOIDFALL ---
-  { id: 'v_c1', set: 'voidfall', name: 'Void Slime', rarity: 'Common', element: 'Dark', hp: 50, attack: 'Absorb', dmg: 10, ability: 'Heals 10 HP every turn.', flavor: 'A puddle of pure dark matter.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=voidslime' },
-  { id: 'v_c2', set: 'voidfall', name: 'Cosmic Dust', rarity: 'Common', element: 'Cosmic', hp: 30, attack: 'Sparkle', dmg: 20, ability: 'Confuse: 10% chance enemy misses.', flavor: 'Remnants of a dead star.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cosmicdust' },
-  { id: 'v_c3', set: 'voidfall', name: 'Ghost Lantern', rarity: 'Common', element: 'Ghost', hp: 40, attack: 'Flicker', dmg: 25, ability: 'Spook: Enemy cannot use abilities next turn.', flavor: 'Guides lost souls to the abyss.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=lantern' },
-  { id: 'v_c4', set: 'voidfall', name: 'Meteor Hound', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Crater Bite', dmg: 20, ability: 'Tough: Takes 5 less damage.', flavor: 'Forged in the heart of a falling meteor.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=meteorhound' },
-  { id: 'v_c5', set: 'voidfall', name: 'Lunar Moth', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Moon Gust', dmg: 15, ability: 'Evade: 20% dodge chance.', flavor: 'Only flies under a full moon.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=lunarmoth' },
-  { id: 'v_r1', set: 'voidfall', name: 'Astral Knight', rarity: 'Rare', element: 'Steel', hp: 100, attack: 'Star Slash', dmg: 50, ability: 'Armor: Blocks 10 damage per attack.', flavor: 'A guardian of the cosmic gates.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=astralknight' },
-  { id: 'v_r2', set: 'voidfall', name: 'Poltergeist', rarity: 'Rare', element: 'Ghost', hp: 80, attack: 'Telekinesis', dmg: 60, ability: 'Haunt: Deals 10 damage to enemy bench.', flavor: 'Throws whatever it can find.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=poltergeist' },
-  { id: 'v_r3', set: 'voidfall', name: 'Starfire Elemental', rarity: 'Rare', element: 'Fire', hp: 90, attack: 'Nova Blast', dmg: 70, ability: 'Overheat: Takes 10 damage after attacking.', flavor: 'Burns brighter than a supernova.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=starfire' },
-  { id: 'v_e1', set: 'voidfall', name: 'Event Horizon', rarity: 'Epic', element: 'Dark', hp: 140, attack: 'Gravity Crush', dmg: 85, ability: 'Pull: Forces enemy to swap active card.', flavor: 'Nothing escapes its grasp.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=eventhorizon' },
-  { id: 'v_e2', set: 'voidfall', name: 'Supernova Spirit', rarity: 'Epic', element: 'Light', hp: 120, attack: 'Blinding Flash', dmg: 90, ability: 'Radiance: Heals all benched allies for 10.', flavor: 'The spectacular end of a massive star.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=supernovaspirit' },
-  { id: 'v_l1', set: 'voidfall', name: 'Void Leviathan', rarity: 'Legendary', element: 'Water', hp: 200, attack: 'Abyssal Maw', dmg: 130, ability: 'Consume: Instantly destroys any card under 40 HP.', flavor: 'Swallows entire planets whole.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=voidleviathan' },
-  { id: 'v_gx1', set: 'voidfall', name: 'Chaos Bringer GX', rarity: 'GX', element: 'Dark', hp: 290, attack: 'Annihilation', dmg: 240, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The embodiment of universal entropy.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chaosbringer' },
+  { id: 'v_c1', set: 'voidfall', name: 'Void Slime', rarity: 'Common', element: 'Dark', hp: 50, attack: 'Absorb', dmg: 10, ability: 'Heals', flavor: 'Pure dark matter.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=voidslime' },
+  { id: 'v_c2', set: 'voidfall', name: 'Cosmic Dust', rarity: 'Common', element: 'Cosmic', hp: 30, attack: 'Sparkle', dmg: 20, ability: 'Confuse', flavor: 'Dead star remnants.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cosmicdust' },
+  { id: 'v_c3', set: 'voidfall', name: 'Ghost Lantern', rarity: 'Common', element: 'Ghost', hp: 40, attack: 'Flicker', dmg: 25, ability: 'Spook', flavor: 'Guides lost souls.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=lantern' },
+  { id: 'v_c4', set: 'voidfall', name: 'Meteor Hound', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Crater Bite', dmg: 20, ability: 'Tough', flavor: 'Falling meteor.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=meteorhound' },
+  { id: 'v_c5', set: 'voidfall', name: 'Lunar Moth', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Moon Gust', dmg: 15, ability: 'Evade', flavor: 'Only flies at night.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=lunarmoth' },
+  { id: 'v_r1', set: 'voidfall', name: 'Astral Knight', rarity: 'Rare', element: 'Steel', hp: 100, attack: 'Star Slash', dmg: 50, ability: 'Armor', flavor: 'Cosmic gates.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=astralknight' },
+  { id: 'v_r2', set: 'voidfall', name: 'Poltergeist', rarity: 'Rare', element: 'Ghost', hp: 80, attack: 'Telekinesis', dmg: 60, ability: 'Haunt', flavor: 'Throws anything.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=poltergeist' },
+  { id: 'v_r3', set: 'voidfall', name: 'Starfire Elemental', rarity: 'Rare', element: 'Fire', hp: 90, attack: 'Nova Blast', dmg: 70, ability: 'Overheat', flavor: 'Supernova heat.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=starfire' },
+  { id: 'v_e1', set: 'voidfall', name: 'Event Horizon', rarity: 'Epic', element: 'Dark', hp: 140, attack: 'Gravity Crush', dmg: 85, ability: 'Pull', flavor: 'Nothing escapes.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=eventhorizon' },
+  { id: 'v_e2', set: 'voidfall', name: 'Supernova Spirit', rarity: 'Epic', element: 'Light', hp: 120, attack: 'Blinding Flash', dmg: 90, ability: 'Radiance', flavor: 'End of a massive star.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=supernovaspirit' },
+  { id: 'v_l1', set: 'voidfall', name: 'Void Leviathan', rarity: 'Legendary', element: 'Water', hp: 200, attack: 'Abyssal Maw', dmg: 130, ability: 'Consume', flavor: 'Swallows planets.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=voidleviathan' },
+  { id: 'v_gx1', set: 'voidfall', name: 'Chaos Bringer GX', rarity: 'GX', element: 'Dark', hp: 290, attack: 'Annihilation', dmg: 240, ability: 'GX Rule', flavor: 'Universal entropy.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chaosbringer' },
 
   // --- SET 4: MYTHOS ---
-  { id: 'm_c1', set: 'mythos', name: 'Minotaur Calf', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Headbutt', dmg: 20, ability: 'Stubborn: Takes 5 less damage.', flavor: 'Small horns, big attitude.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=minotaur' },
-  { id: 'm_c2', set: 'mythos', name: 'Harpy Hatchling', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Screech', dmg: 15, ability: 'Annoy: Lowers enemy attack by 5.', flavor: 'Loud enough to wake the dead.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=harpy' },
-  { id: 'm_c3', set: 'mythos', name: 'River Nymph', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Soothe: Heals 5 HP to active ally.', flavor: 'Protects the sacred streams.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=nymph' },
-  { id: 'm_c4', set: 'mythos', name: 'Satyr Piper', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Melody', dmg: 15, ability: 'Lullaby: 10% chance to sleep enemy.', flavor: 'Always ready for a woodland party.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=satyr' },
-  { id: 'm_c5', set: 'mythos', name: 'Centaur Foal', rarity: 'Common', element: 'Wind', hp: 55, attack: 'Kick', dmg: 20, ability: 'Swift: Ignores retreat cost.', flavor: 'Faster than the plains wind.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=centaur' },
-  { id: 'm_c6', set: 'mythos', name: 'Siren Song', rarity: 'Common', element: 'Water', hp: 40, attack: 'Echo', dmg: 15, ability: 'Lure: Prevents enemy retreat.', flavor: 'A beautiful voice with deadly intent.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=siren' },
-  { id: 'm_c7', set: 'mythos', name: 'Cyclops Runt', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Stomp', dmg: 25, ability: 'Clumsy: 10% chance to hurt itself.', flavor: 'Only has one eye, still misses.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=cyclops' },
-  { id: 'm_c8', set: 'mythos', name: 'Basilisk Scale', rarity: 'Common', element: 'Dark', hp: 30, attack: 'Glare', dmg: 15, ability: 'Petrify: 5% chance to stun.', flavor: 'Don\'t look directly at it.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=basilisk' },
-  { id: 'm_c9', set: 'mythos', name: 'Gorgon Snake', rarity: 'Common', element: 'Dark', hp: 35, attack: 'Bite', dmg: 20, ability: 'Venom: Deals 5 damage end of turn.', flavor: 'Slipped away from Medusa\'s hair.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=snake' },
-  { id: 'm_c10', set: 'mythos', name: 'Chimera Cub', rarity: 'Common', element: 'Fire', hp: 50, attack: 'Spark', dmg: 15, ability: 'Hybrid: Counts as Fire and Dark.', flavor: 'Three heads, triple the trouble.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=chimera' },
-  { id: 'm_c11', set: 'mythos', name: 'Sphinx Riddle', rarity: 'Common', element: 'Light', hp: 45, attack: 'Confuse', dmg: 10, ability: 'Ponder: Opponent plays with hand revealed.', flavor: 'What walks on four legs in the morning?', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=sphinx' },
-  { id: 'm_c12', set: 'mythos', name: 'Pegasus Feather', rarity: 'Common', element: 'Wind', hp: 30, attack: 'Glide', dmg: 20, ability: 'Aero: Immune to Earth attacks.', flavor: 'Lighter than air itself.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pegasus' },
-  { id: 'm_c13', set: 'mythos', name: 'Griffin Claw', rarity: 'Common', element: 'Wind', hp: 40, attack: 'Swipe', dmg: 25, ability: 'Fierce: +5 damage vs Rares.', flavor: 'Half lion, half eagle, all dangerous.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=griffin' },
-  { id: 'm_c14', set: 'mythos', name: 'Kelpie Mane', rarity: 'Common', element: 'Water', hp: 50, attack: 'Drown', dmg: 20, ability: 'Tide: Water attacks do +5 damage.', flavor: 'A watery illusion of a horse.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=kelpie' },
-  { id: 'm_c15', set: 'mythos', name: 'Manticore Barb', rarity: 'Common', element: 'Fire', hp: 45, attack: 'Sting', dmg: 25, ability: 'Poison: 5 damage between turns.', flavor: 'A deadly tail from a mythical beast.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=manticore' },
-  { id: 'm_r1', set: 'mythos', name: 'Cerberus', rarity: 'Rare', element: 'Dark', hp: 110, attack: 'Tri-Bite', dmg: 45, ability: 'Guard: Blocks retreat for opponent.', flavor: 'The three-headed hound of Hades.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cerberus' },
-  { id: 'm_r2', set: 'mythos', name: 'Hydra', rarity: 'Rare', element: 'Water', hp: 130, attack: 'Acid Spit', dmg: 40, ability: 'Regrow: Heals 10 HP when damaged.', flavor: 'Cut off one head, two more shall take its place.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=hydra' },
-  { id: 'm_r3', set: 'mythos', name: 'Kraken', rarity: 'Rare', element: 'Water', hp: 140, attack: 'Tentacle Smash', dmg: 50, ability: 'Drag Down: Discards opponent active energy.', flavor: 'Release the beast of the depths.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=kraken' },
-  { id: 'm_r4', set: 'mythos', name: 'Leviathan', rarity: 'Rare', element: 'Water', hp: 150, attack: 'Tidal Wave', dmg: 60, ability: 'Massive: Cannot be instantly KOd.', flavor: 'The undisputed king of the ocean.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=leviathan' },
-  { id: 'm_r5', set: 'mythos', name: 'Fenrir', rarity: 'Rare', element: 'Dark', hp: 120, attack: 'Wolf Bite', dmg: 65, ability: 'Unbound: Breaks through all shields.', flavor: 'The wolf destined to swallow the sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=fenrir' },
-  { id: 'm_r6', set: 'mythos', name: 'Valkyrie', rarity: 'Rare', element: 'Light', hp: 90, attack: 'Spear Dive', dmg: 55, ability: 'Valhalla: Revives self once with 10 HP.', flavor: 'Chooser of the slain.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=valkyrie' },
-  { id: 'm_r7', set: 'mythos', name: 'Wendigo', rarity: 'Rare', element: 'Ghost', hp: 100, attack: 'Frost Claw', dmg: 60, ability: 'Hunger: +10 damage for each prize card taken.', flavor: 'A spirit of winter and starvation.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wendigo' },
-  { id: 'm_r8', set: 'mythos', name: 'Thunderbird', rarity: 'Rare', element: 'Electric', hp: 110, attack: 'Lightning Strike', dmg: 70, ability: 'Storm: Deals 5 damage to all benched pokemon.', flavor: 'Lightning flashes with every flap of its wings.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=thunderbird' },
-  { id: 'm_r9', set: 'mythos', name: 'Kitsune', rarity: 'Rare', element: 'Fire', hp: 95, attack: 'Fox Fire', dmg: 50, ability: 'Illusion: Avoids attacks 25% of the time.', flavor: 'A nine-tailed spirit of trickery.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=kitsune' },
-  { id: 'm_e1', set: 'mythos', name: 'Bahamut', rarity: 'Epic', element: 'Cosmic', hp: 160, attack: 'Mega Flare', dmg: 90, ability: 'Dragon King: Buffs all allied attacks by +10.', flavor: 'The platinum dragon of legend.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bahamut' },
-  { id: 'm_e2', set: 'mythos', name: 'Jormungandr', rarity: 'Epic', element: 'Water', hp: 170, attack: 'World Coil', dmg: 85, ability: 'Constrict: Enemy active cannot retreat.', flavor: 'The serpent that encircles the world.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=jormun' },
-  { id: 'm_e3', set: 'mythos', name: 'Quetzalcoatl', rarity: 'Epic', element: 'Wind', hp: 150, attack: 'Hurricane Breath', dmg: 80, ability: 'Feathered Serpent: Heals team 10 HP per turn.', flavor: 'The majestic deity of wind and wisdom.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=quetzal' },
-  { id: 'm_e4', set: 'mythos', name: 'Behemoth', rarity: 'Epic', element: 'Earth', hp: 180, attack: 'Earth Shatter', dmg: 95, ability: 'Unstoppable: Immune to all negative status effects.', flavor: 'The beast that shakes the earth.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=behemoth' },
-  { id: 'm_l1', set: 'mythos', name: 'Ouroboros', rarity: 'Legendary', element: 'Cosmic', hp: 220, attack: 'Eternal Cycle', dmg: 140, ability: 'Infinity: If knocked out, shuffles back into deck instead of discarding.', flavor: 'The snake eating its own tail. The infinite loop.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=ouroboros' },
-  { id: 'm_gx1', set: 'mythos', name: 'Chronos GX', rarity: 'GX', element: 'Cosmic', hp: 300, attack: 'Time Paradox', dmg: 250, ability: 'GX Rule: When knocked out, opponent takes 2 Prize cards.', flavor: 'The master of time. Erases enemies from existence.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chronos' }
+  { id: 'm_c1', set: 'mythos', name: 'Minotaur Calf', rarity: 'Common', element: 'Earth', hp: 45, attack: 'Headbutt', dmg: 20, ability: 'Stubborn', flavor: 'Big attitude.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=minotaur' },
+  { id: 'm_c2', set: 'mythos', name: 'Harpy Hatchling', rarity: 'Common', element: 'Wind', hp: 35, attack: 'Screech', dmg: 15, ability: 'Annoy', flavor: 'Loud enough to wake dead.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=harpy' },
+  { id: 'm_c3', set: 'mythos', name: 'River Nymph', rarity: 'Common', element: 'Water', hp: 40, attack: 'Splash', dmg: 10, ability: 'Soothe', flavor: 'Protects streams.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=nymph' },
+  { id: 'm_c4', set: 'mythos', name: 'Satyr Piper', rarity: 'Common', element: 'Earth', hp: 50, attack: 'Melody', dmg: 15, ability: 'Lullaby', flavor: 'Woodland party.', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=satyr' },
+  { id: 'm_c5', set: 'mythos', name: 'Centaur Foal', rarity: 'Common', element: 'Wind', hp: 55, attack: 'Kick', dmg: 20, ability: 'Swift', flavor: 'Faster than wind.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=centaur' },
+  { id: 'm_c6', set: 'mythos', name: 'Siren Song', rarity: 'Common', element: 'Water', hp: 40, attack: 'Echo', dmg: 15, ability: 'Lure', flavor: 'Deadly intent.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=siren' },
+  { id: 'm_c7', set: 'mythos', name: 'Cyclops Runt', rarity: 'Common', element: 'Earth', hp: 60, attack: 'Stomp', dmg: 25, ability: 'Clumsy', flavor: 'One eye, still misses.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=cyclops' },
+  { id: 'm_c8', set: 'mythos', name: 'Basilisk Scale', rarity: 'Common', element: 'Dark', hp: 30, attack: 'Glare', dmg: 15, ability: 'Petrify', flavor: 'Do not look.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=basilisk' },
+  { id: 'm_c9', set: 'mythos', name: 'Gorgon Snake', rarity: 'Common', element: 'Dark', hp: 35, attack: 'Bite', dmg: 20, ability: 'Venom', flavor: 'Medusa hair.', imgSrc: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=snake' },
+  { id: 'm_c10', set: 'mythos', name: 'Chimera Cub', rarity: 'Common', element: 'Fire', hp: 50, attack: 'Spark', dmg: 15, ability: 'Hybrid', flavor: 'Three heads.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=chimera' },
+  { id: 'm_c11', set: 'mythos', name: 'Sphinx Riddle', rarity: 'Common', element: 'Light', hp: 45, attack: 'Confuse', dmg: 10, ability: 'Ponder', flavor: 'Walks on four legs?', imgSrc: 'https://api.dicebear.com/9.x/adventurer/svg?seed=sphinx' },
+  { id: 'm_c12', set: 'mythos', name: 'Pegasus Feather', rarity: 'Common', element: 'Wind', hp: 30, attack: 'Glide', dmg: 20, ability: 'Aero', flavor: 'Lighter than air.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=pegasus' },
+  { id: 'm_c13', set: 'mythos', name: 'Griffin Claw', rarity: 'Common', element: 'Wind', hp: 40, attack: 'Swipe', dmg: 25, ability: 'Fierce', flavor: 'Half lion, half eagle.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=griffin' },
+  { id: 'm_c14', set: 'mythos', name: 'Kelpie Mane', rarity: 'Common', element: 'Water', hp: 50, attack: 'Drown', dmg: 20, ability: 'Tide', flavor: 'Watery illusion.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=kelpie' },
+  { id: 'm_c15', set: 'mythos', name: 'Manticore Barb', rarity: 'Common', element: 'Fire', hp: 45, attack: 'Sting', dmg: 25, ability: 'Poison', flavor: 'Deadly tail.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=manticore' },
+  { id: 'm_r1', set: 'mythos', name: 'Cerberus', rarity: 'Rare', element: 'Dark', hp: 110, attack: 'Tri-Bite', dmg: 45, ability: 'Guard', flavor: 'Three-headed hound.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=cerberus' },
+  { id: 'm_r2', set: 'mythos', name: 'Hydra', rarity: 'Rare', element: 'Water', hp: 130, attack: 'Acid Spit', dmg: 40, ability: 'Regrow', flavor: 'Cut off one head.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=hydra' },
+  { id: 'm_r3', set: 'mythos', name: 'Kraken', rarity: 'Rare', element: 'Water', hp: 140, attack: 'Tentacle Smash', dmg: 50, ability: 'Drag Down', flavor: 'Release the beast.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=kraken' },
+  { id: 'm_r4', set: 'mythos', name: 'Leviathan', rarity: 'Rare', element: 'Water', hp: 150, attack: 'Tidal Wave', dmg: 60, ability: 'Massive', flavor: 'King of the ocean.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=leviathan' },
+  { id: 'm_r5', set: 'mythos', name: 'Fenrir', rarity: 'Rare', element: 'Dark', hp: 120, attack: 'Wolf Bite', dmg: 65, ability: 'Unbound', flavor: 'Swallow the sun.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=fenrir' },
+  { id: 'm_r6', set: 'mythos', name: 'Valkyrie', rarity: 'Rare', element: 'Light', hp: 90, attack: 'Spear Dive', dmg: 55, ability: 'Valhalla', flavor: 'Chooser of the slain.', imgSrc: 'https://api.dicebear.com/9.x/lorelei/svg?seed=valkyrie' },
+  { id: 'm_r7', set: 'mythos', name: 'Wendigo', rarity: 'Rare', element: 'Ghost', hp: 100, attack: 'Frost Claw', dmg: 60, ability: 'Hunger', flavor: 'Spirit of starvation.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=wendigo' },
+  { id: 'm_r8', set: 'mythos', name: 'Thunderbird', rarity: 'Rare', element: 'Electric', hp: 110, attack: 'Lightning Strike', dmg: 70, ability: 'Storm', flavor: 'Lightning flashes.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=thunderbird' },
+  { id: 'm_r9', set: 'mythos', name: 'Kitsune', rarity: 'Rare', element: 'Fire', hp: 95, attack: 'Fox Fire', dmg: 50, ability: 'Illusion', flavor: 'Nine-tailed trickery.', imgSrc: 'https://api.dicebear.com/9.x/lorelei-neutral/svg?seed=kitsune' },
+  { id: 'm_e1', set: 'mythos', name: 'Bahamut', rarity: 'Epic', element: 'Cosmic', hp: 160, attack: 'Mega Flare', dmg: 90, ability: 'Dragon King', flavor: 'Platinum dragon.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=bahamut' },
+  { id: 'm_e2', set: 'mythos', name: 'Jormungandr', rarity: 'Epic', element: 'Water', hp: 170, attack: 'World Coil', dmg: 85, ability: 'Constrict', flavor: 'Encircles the world.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=jormun' },
+  { id: 'm_e3', set: 'mythos', name: 'Quetzalcoatl', rarity: 'Epic', element: 'Wind', hp: 150, attack: 'Hurricane Breath', dmg: 80, ability: 'Feathered Serpent', flavor: 'Deity of wind.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=quetzal' },
+  { id: 'm_e4', set: 'mythos', name: 'Behemoth', rarity: 'Epic', element: 'Earth', hp: 180, attack: 'Earth Shatter', dmg: 95, ability: 'Unstoppable', flavor: 'Shakes the earth.', imgSrc: 'https://api.dicebear.com/9.x/bottts/svg?seed=behemoth' },
+  { id: 'm_l1', set: 'mythos', name: 'Ouroboros', rarity: 'Legendary', element: 'Cosmic', hp: 220, attack: 'Eternal Cycle', dmg: 140, ability: 'Infinity', flavor: 'Infinite loop.', imgSrc: 'https://api.dicebear.com/9.x/shapes/svg?seed=ouroboros' },
+  { id: 'm_gx1', set: 'mythos', name: 'Chronos GX', rarity: 'GX', element: 'Cosmic', hp: 300, attack: 'Time Paradox', dmg: 250, ability: 'GX Rule', flavor: 'Master of time.', imgSrc: 'https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=chronos' }
 ];
 
 const CHARACTERS = [...ENERGY_CARDS, ...COMBAT_CHARACTERS];
@@ -321,15 +257,9 @@ const ProfileSetup = ({ onComplete, user, db }) => {
                 let width = img.width;
                 let height = img.height;
                 if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
+                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
                 } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
+                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
                 }
                 canvas.width = width;
                 canvas.height = height;
@@ -412,6 +342,26 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
   if (card.isMassive && size === 'large') dims += ' scale-110';
   const selectionRing = isSelected ? 'ring-4 ring-amber-400 ring-offset-2 ring-offset-slate-900 scale-105 shadow-[0_0_30px_rgba(245,158,11,0.4)]' : '';
   const massiveGlow = card.isMassive ? 'shadow-[0_0_40px_rgba(234,179,8,0.6)] border-yellow-400' : '';
+
+  if (card.isEnergy) {
+    return (
+      <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
+        <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d shadow-2xl rounded-3xl ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+          <div className={`absolute w-full h-full backface-hidden rounded-3xl border-2 sm:border-[4px] border-slate-700 bg-gradient-to-br ${elementStyle.artBg} flex flex-col items-center justify-between py-4 sm:py-8 shadow-inner overflow-hidden`} style={{ backfaceVisibility: 'hidden' }}>
+             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+             {size !== 'mini' && <h3 className={`font-black uppercase tracking-[0.3em] text-white/90 drop-shadow-md ${size === 'large' ? 'text-3xl mt-4' : 'text-[0.65rem] sm:text-xs'}`}>ENERGY</h3>}
+             <div className={`bg-white/10 p-3 sm:p-8 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.2)] backdrop-blur-xl border border-white/20 group-hover:scale-110 transition-all duration-500`}>
+                <ElementIcon className={`${size === 'large' ? 'w-32 h-32' : size === 'small' ? 'w-10 h-10' : 'w-6 h-6'} text-white drop-shadow-lg`} />
+             </div>
+             {size !== 'mini' && <h4 className={`font-black uppercase tracking-[0.4em] text-white/80 drop-shadow-md mb-2 ${size === 'large' ? 'text-2xl' : 'text-[0.55rem] sm:text-[0.65rem]'}`}>{card.element}</h4>}
+          </div>
+          <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-black border-2 sm:border-[4px] border-slate-700/50 rounded-3xl flex items-center justify-center shadow-xl" style={{ transform: 'rotateY(180deg)' }}>
+             <Layers className={`${size === 'large' ? 'w-24 h-24' : 'w-6 h-6 sm:w-10 sm:h-10'} text-amber-500 drop-shadow-md`} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
@@ -775,7 +725,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
       {/* BOT SIDE */}
       <div className="flex-1 min-h-[280px] shrink-0 bg-slate-950/80 border-b border-slate-800 p-4 flex flex-col relative z-10">
          <div className="absolute top-4 left-4 flex gap-4">
-            <div className="w-10 sm:w-12 aspect-[25/36] bg-gradient-to-br from-slate-800 to-black border-2 border-slate-600 rounded-lg flex flex-col items-center justify-center shadow-md">
+            <div className={`w-10 sm:w-12 aspect-[25/36] bg-gradient-to-br from-slate-800 to-black border-2 border-slate-600 rounded-lg flex flex-col items-center justify-center shadow-md`}>
                <Layers className="w-4 h-4 text-slate-500 opacity-50" /><span className="text-slate-400 font-black text-[0.6rem] mt-1">{bot.deck.length}</span>
             </div>
             <div className="flex flex-col gap-1">
@@ -833,7 +783,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
             <div className="flex gap-3 h-24">
                {[...Array(5)].map((_, i) => (
                  <div key={i} className={`w-16 h-24 border rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer ${!player.bench[i] && selectedHandCard && !selectedHandCard.card.isEnergy ? 'border-amber-400/50 bg-amber-900/10' : player.bench[i] && selectedHandCard?.card.isEnergy && !player.energyAttachedThisTurn ? 'border-emerald-400 bg-emerald-900/20' : 'border-slate-800 bg-slate-900/50'}`} onClick={() => me.bench[i] && selectedHandCard?.card.isEnergy ? handlePlayAreaClick('benchCard', i) : me.bench[i] ? handleBenchPromote(i) : handlePlayAreaClick('bench')}>
-                    {player.bench[i] ? <TCGCard card={player.bench[i]} size="mini" inBattle={true} /> : null}
+                    {me.bench[i] ? <TCGCard card={me.bench[i]} size="mini" inBattle={true} /> : null}
                  </div>
                ))}
             </div>
@@ -1410,6 +1360,7 @@ export default function App() {
   const [dbError, setDbError] = useState(false);
   
   const [onlineMatchId, setOnlineMatchId] = useState(null);
+  const [selectedBinderCard, setSelectedBinderCard] = useState(null);
 
   const showToast = (message, type = 'info') => {
      setToast({ message, type });
@@ -1460,7 +1411,16 @@ export default function App() {
              if (data.coins !== undefined) setCoins(data.coins);
              if (data.collection) setCollection(data.collection);
              if (data.deck) setDeck(data.deck);
-             if (data.profile) setProfile(data.profile); else setShowProfileSetup(true);
+             if (data.profile) {
+                 const today = new Date().toDateString();
+                 if (data.profile.lastLogin !== today) {
+                     setCoins(c => c + 500);
+                     showToast("Daily Login Reward: +500 Coins!", "success");
+                     setProfile({...data.profile, lastLogin: today});
+                 } else {
+                     setProfile(data.profile);
+                 }
+             } else setShowProfileSetup(true);
           } else setShowProfileSetup(true);
        } catch(e) { console.error(e); if (e.message?.toLowerCase().includes('permission') || e.code === 'permission-denied') setDbError(true); }
        setDataLoaded(true);
@@ -1477,6 +1437,19 @@ export default function App() {
         saveData();
      }
   }, [coins, collection, deck, profile, dataLoaded, user, db, dbError, showProfileSetup]);
+
+  const forgeMassive = (baseId) => {
+      if (collection[baseId] >= 5) {
+          setCollection(prev => {
+              const next = {...prev};
+              next[baseId] -= 5;
+              next[`${baseId}_massive`] = (next[`${baseId}_massive`] || 0) + 1;
+              return next;
+          });
+          showToast(`Forged MASSIVE ${getBaseCard(baseId).name}!`, 'success');
+          setSelectedBinderCard({...getBaseCard(baseId), isMassive: true});
+      }
+  };
 
   const [currentCards, setCurrentCards] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -1601,11 +1574,63 @@ service cloud.firestore {
   }
 
   if (!dataLoaded) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-amber-500 font-black tracking-[0.2em]">LOADING SAVE DATA...</div>;
-  if (showProfileSetup) return <ProfileSetup onComplete={(p) => { setProfile(p); setShowProfileSetup(false); }} user={user} db={db} />;
+  if (showProfileSetup) return <ProfileSetup onComplete={(p) => { setProfile({...p, lastLogin: new Date().toDateString()}); setShowProfileSetup(false); }} user={user} db={db} />;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-amber-500/30 overflow-x-hidden relative flex flex-col">
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
+
+      {/* Card Inspection Modal */}
+      {selectedBinderCard && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-300" onClick={() => setSelectedBinderCard(null)}>
+          <div className="bg-slate-900 border border-slate-700 rounded-[2rem] p-8 max-w-5xl w-full flex flex-col md:flex-row gap-8 items-center relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" onClick={e => e.stopPropagation()}>
+             <button onClick={() => setSelectedBinderCard(null)} className="absolute top-6 right-6 text-2xl font-black text-slate-500 hover:text-white transition-colors z-50"><X /></button>
+             
+             <div className="w-64 sm:w-80 shrink-0">
+                <TCGCard card={selectedBinderCard} size="large" />
+             </div>
+             
+             <div className="flex-1 text-left w-full">
+                <h2 className={`text-4xl sm:text-5xl font-black uppercase tracking-tighter mb-2 ${selectedBinderCard.isMassive ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-rose-500 to-fuchsia-500 drop-shadow-md' : 'text-white'}`}>
+                   {selectedBinderCard.name}
+                </h2>
+                <div className="flex items-center gap-3 mb-6">
+                   <span className={`px-3 py-1 rounded-md text-xs font-black tracking-widest ${RARITIES[selectedBinderCard.rarity].outerBg} ${RARITIES[selectedBinderCard.rarity].color} border border-slate-600`}>
+                       {selectedBinderCard.rarity} {selectedBinderCard.isMassive && ' (MASSIVE)'}
+                   </span>
+                   <span className="px-3 py-1 rounded-md text-xs font-black tracking-widest bg-slate-800 text-slate-400 border border-slate-600">
+                       {selectedBinderCard.element}
+                   </span>
+                </div>
+                
+                <p className="text-slate-300 text-lg sm:text-xl italic mb-8 border-l-4 border-slate-700 pl-4 py-1">"{selectedBinderCard.flavor}"</p>
+                
+                {/* Forge Section */}
+                {!selectedBinderCard.isMassive && !selectedBinderCard.isEnergy && (
+                   <div className="bg-slate-950/80 rounded-2xl p-6 border border-rose-900/30 shadow-inner relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-fuchsia-500/5 opacity-50"></div>
+                      <h3 className="text-xl font-black text-rose-400 tracking-widest flex items-center gap-2 mb-2 relative z-10"><Flame className="w-5 h-5" /> THE FORGE</h3>
+                      <p className="text-slate-400 text-sm mb-6 relative z-10">Combine 5 standard copies of this card to forge 1 ultra-rare <strong className="text-yellow-400">MASSIVE</strong> variant.</p>
+                      
+                      <div className="flex items-center justify-between relative z-10">
+                          <div className="flex items-center gap-2">
+                              <span className="text-slate-300 font-bold text-sm uppercase tracking-widest">Owned:</span>
+                              <span className={`font-black text-xl ${collection[selectedBinderCard.id] >= 5 ? 'text-emerald-400' : 'text-rose-400'}`}>{collection[selectedBinderCard.id] || 0} / 5</span>
+                          </div>
+                          <button 
+                             onClick={() => forgeMassive(selectedBinderCard.id)}
+                             disabled={(collection[selectedBinderCard.id] || 0) < 5}
+                             className="px-6 py-3 bg-gradient-to-r from-rose-600 to-fuchsia-600 disabled:from-slate-800 disabled:to-slate-800 text-white disabled:text-slate-500 font-black tracking-widest rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.4)] disabled:shadow-none hover:scale-105 transition-all"
+                          >
+                             FORGE
+                          </button>
+                      </div>
+                   </div>
+                )}
+             </div>
+          </div>
+        </div>
+      )}
 
       {showRules && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
@@ -1672,7 +1697,7 @@ service cloud.firestore {
           </div>
           <div className="w-px h-6 bg-slate-800 mx-1"></div>
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full pl-1 pr-2 py-1 relative group cursor-help">
-             <img src={profile?.avatar} alt="Profile" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-slate-600 bg-black" />
+             <img src={profile?.avatar} alt="Profile" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-slate-600 bg-black object-cover" />
              <span className="text-xs font-bold text-slate-300 hidden sm:block max-w-[100px] truncate">{profile?.username}</span>
              <div className="absolute inset-0 bg-rose-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={handleLogout}>
                  <LogOut className="w-4 h-4 text-white" />
@@ -1729,6 +1754,7 @@ service cloud.firestore {
               <h2 className="text-4xl sm:text-6xl font-black text-white mb-4 sm:mb-6 tracking-tighter drop-shadow-2xl">SHOP</h2>
               <p className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto px-4 font-medium tracking-wide">Pull mythic heroes. Gather elemental energy. Construct an unbeatable deck.</p>
             </div>
+
             {/* BOOSTER BOXES SECTION */}
             <div className="w-full max-w-7xl mb-12 px-4">
                 <h3 className="text-2xl font-black text-slate-300 tracking-[0.2em] mb-6 flex items-center gap-3"><PackageOpen className="text-purple-500" /> BOOSTER BOXES</h3>
@@ -1736,6 +1762,7 @@ service cloud.firestore {
                     {BOXES.map(box => {
                         const promoCard = getBaseCard(box.promoId);
                         const elementStyle = promoCard ? ELEMENTS[promoCard.element] : null;
+
                         return (
                         <div key={box.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-purple-500/30 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-purple-500 transition-all hover:-translate-y-4 duration-300 flex flex-col lg:flex-row p-6 sm:p-10 gap-8">
                             
@@ -1760,14 +1787,24 @@ service cloud.firestore {
                             <div className="flex flex-col flex-1 justify-center z-20">
                                 <div>
                                     <div className="flex items-center gap-2 mb-4 bg-purple-500/10 w-fit px-3 py-1 rounded-lg border border-purple-500/20">
-                                        <Sparkles className="w-4 h-4 text-purple-400" /><span className="text-purple-400 font-bold tracking-widest text-xs uppercase">Premium Item</span>
+                                        <Sparkles className="w-4 h-4 text-purple-400" />
+                                        <span className="text-purple-400 font-bold tracking-widest text-xs uppercase">Premium Item</span>
                                     </div>
                                     <p className="text-slate-300 font-medium mb-6 sm:mb-8 text-base sm:text-lg leading-relaxed">{box.description}</p>
                                 </div>
-                                <button onClick={() => buyBox(box)} disabled={coins < box.cost} className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${coins >= box.cost ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)] hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] border border-purple-500/50' : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'}`}>
+                                <button 
+                                onClick={() => buyBox(box)}
+                                disabled={coins < box.cost}
+                                className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${
+                                    coins >= box.cost 
+                                    ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)] hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] border border-purple-500/50' 
+                                    : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                }`}
+                                >
                                 <span>BUY BOX</span>
                                 <div className="flex items-center bg-black/30 px-3 sm:px-4 py-1.5 rounded-xl border border-white/10">
-                                    <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />{box.cost.toLocaleString()}
+                                    <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />
+                                    {box.cost.toLocaleString()}
                                 </div>
                                 </button>
                             </div>
@@ -1783,29 +1820,53 @@ service cloud.firestore {
                 {PACKS.map(pack => {
                     const featuredCard = getBaseCard(pack.featuredCardId);
                     const elementStyle = featuredCard ? ELEMENTS[featuredCard.element] : null;
+
                     return (
                     <div key={pack.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-amber-500/50 transition-all hover:-translate-y-4 duration-300 flex flex-col">
                     <div className={`h-56 sm:h-72 bg-gradient-to-b ${pack.color} flex flex-col items-center justify-center p-6 text-center relative overflow-hidden shrink-0`}>
+                        {/* Foil crimps top and bottom */}
                         <div className="absolute top-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-b border-black/20"></div>
                         <div className="absolute bottom-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-t border-white/20"></div>
+
+                        {/* Pack texture */}
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-40 mix-blend-overlay z-0"></div>
                         <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-black/30 pointer-events-none z-10 group-hover:opacity-50 transition-opacity"></div>
+                        
+                        {/* Featured Character Art */}
                         {featuredCard && (
                             <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out z-0 mt-4">
                             <img src={featuredCard.imgSrc} className={`w-40 h-40 sm:w-52 sm:h-52 object-contain ${elementStyle?.imgFilter} drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]`} alt="Featured" />
                             </div>
                         )}
+
+                        {/* Pack Name Banner */}
                         <div className="z-10 bg-black/70 w-[120%] py-3 sm:py-4 backdrop-blur-md border-y-2 border-white/20 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
-                            <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">{pack.name}</h3>
-                            {featuredCard && (<p className="text-[0.6rem] sm:text-xs text-amber-400 font-bold tracking-[0.3em] mt-1 uppercase opacity-80">Featuring {featuredCard.name}</p>)}
+                            <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">
+                                {pack.name}
+                            </h3>
+                            {featuredCard && (
+                                <p className="text-[0.6rem] sm:text-xs text-amber-400 font-bold tracking-[0.3em] mt-1 uppercase opacity-80">
+                                Featuring {featuredCard.name}
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="p-6 sm:p-10 flex flex-col flex-1 justify-between bg-gradient-to-b from-slate-900 to-slate-950 relative z-20">
                         <p className="text-slate-300 font-medium mb-6 sm:mb-8 text-center text-base sm:text-lg leading-relaxed">{pack.description}</p>
-                        <button onClick={() => buyPack(pack)} disabled={coins < pack.cost} className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${coins >= pack.cost ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_30px_rgba(217,119,6,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.5)] border border-amber-500/50' : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'}`}>
+                        
+                        <button 
+                        onClick={() => buyPack(pack)}
+                        disabled={coins < pack.cost}
+                        className={`w-full py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl tracking-[0.2em] flex items-center justify-center space-x-4 transition-all ${
+                            coins >= pack.cost 
+                            ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_30px_rgba(217,119,6,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.5)] border border-amber-500/50' 
+                            : 'bg-slate-800/80 text-slate-500 border border-slate-700 cursor-not-allowed'
+                        }`}
+                        >
                         <span>PURCHASE</span>
                         <div className="flex items-center bg-black/30 px-3 sm:px-4 py-1.5 rounded-xl border border-white/10">
-                            <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />{pack.cost}
+                            <Coins className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500" />
+                            {pack.cost}
                         </div>
                         </button>
                     </div>
@@ -1819,26 +1880,37 @@ service cloud.firestore {
         {/* OPENING VIEW */}
         {activeTab === 'opening' && (
            <div className="flex-1 flex flex-col items-center justify-center animate-in zoom-in-95 duration-500 relative">
+             
              {isUnboxing && openingItem ? (
                 <div className="flex flex-col items-center justify-center relative z-50">
                    <h2 className="text-3xl font-black text-white tracking-[0.2em] mb-12 animate-pulse drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">OPENING...</h2>
-                   {unboxStage === 'burst' && (<div className="absolute inset-0 bg-amber-500 rounded-full blur-[150px] opacity-90 animate-in fade-in zoom-in duration-500"></div>)}
+                   
+                   {/* Background Explosion Glow */}
+                   {unboxStage === 'burst' && (
+                       <div className="absolute inset-0 bg-amber-500 rounded-full blur-[150px] opacity-90 animate-in fade-in zoom-in duration-500"></div>
+                   )}
+
                    <div className={`relative transition-all duration-300 ${openingItem.type === 'box' ? 'w-80 sm:w-[28rem] h-64 sm:h-80' : 'w-64 sm:w-80 h-96 sm:h-[28rem]'} rounded-[2rem] shadow-[0_0_50px_rgba(255,255,255,0.2)] overflow-hidden flex flex-col ${unboxStage === 'shake' ? 'animate-pack-shake scale-105' : 'animate-pack-burst pointer-events-none'}`}>
                       <div className={`flex-1 bg-gradient-to-b ${openingItem.color} flex flex-col items-center justify-center p-6 text-center relative overflow-hidden`}>
+                         
                          {openingItem.type === 'pack' && (
                              <>
                                 <div className="absolute top-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-b border-black/20"></div>
                                 <div className="absolute bottom-0 w-full h-4 bg-[repeating-linear-gradient(90deg,rgba(0,0,0,0.1),rgba(0,0,0,0.1)_4px,rgba(255,255,255,0.1)_4px,rgba(255,255,255,0.1)_8px)] z-20 shadow-sm border-t border-white/20"></div>
                              </>
                          )}
+
                          <div className={`absolute inset-0 ${openingItem.type === 'box' ? "bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" : "bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"} opacity-40 mix-blend-overlay z-0`}></div>
+                         
                          {(openingItem.featuredCardId || openingItem.promoId) && (
                              <div className={`absolute inset-0 flex items-center justify-center opacity-100 z-0 drop-shadow-[0_0_40px_rgba(255,255,255,0.8)] ${openingItem.type === 'box' ? 'scale-150 opacity-60' : 'scale-110'}`}>
                                 <img src={getBaseCard(openingItem.featuredCardId || openingItem.promoId)?.imgSrc} className="w-56 h-56 sm:w-72 sm:h-72 object-contain" alt="Featured" />
                              </div>
                          )}
                          <div className="z-10 bg-black/70 w-[120%] py-4 backdrop-blur-md border-y-2 border-white/20 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
-                            <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">{openingItem.name}</h3>
+                            <h3 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-stone-200 to-stone-400 tracking-[0.2em] drop-shadow-[0_4px_4px_rgba(0,0,0,1)] uppercase">
+                               {openingItem.name}
+                            </h3>
                          </div>
                       </div>
                    </div>
@@ -1847,6 +1919,7 @@ service cloud.firestore {
                 <>
                    <div className="text-center mb-10">
                      <h2 className="text-2xl sm:text-4xl font-black text-amber-500 tracking-[0.2em] drop-shadow-[0_0_15px_rgba(245,158,11,0.4)]">{activePackName}</h2>
+                     
                      {!showSummary && currentCards.length <= 15 && (
                         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
                           {currentCards.map((card, i) => (
@@ -1857,6 +1930,7 @@ service cloud.firestore {
                         </div>
                      )}
                    </div>
+                   
                    {!showSummary ? (
                      <div className="flex flex-col items-center justify-center relative mt-2 sm:mt-6">
                        <div className="animate-in slide-in-from-bottom-10 fade-in duration-500">
@@ -1866,7 +1940,9 @@ service cloud.firestore {
                          {isCardRevealed ? (
                            <>
                              {currentCards.length > 10 && activeCardIndex < currentCards.length - 1 && (
-                                <button onClick={handleRevealAll} className="px-8 py-5 bg-slate-800 text-slate-300 font-black tracking-[0.2em] text-sm sm:text-base rounded-full hover:bg-slate-700 hover:text-white transition-all border border-slate-600">REVEAL ALL</button>
+                                <button onClick={handleRevealAll} className="px-8 py-5 bg-slate-800 text-slate-300 font-black tracking-[0.2em] text-sm sm:text-base rounded-full hover:bg-slate-700 hover:text-white transition-all border border-slate-600">
+                                  REVEAL ALL
+                                </button>
                              )}
                              <button onClick={handleCardInteraction} className="px-12 py-5 bg-amber-500 text-slate-950 font-black tracking-[0.2em] text-base sm:text-xl rounded-full hover:bg-amber-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(245,158,11,0.4)] border border-amber-300">
                                {activeCardIndex < currentCards.length - 1 ? 'NEXT CARD' : 'FINISH'}
@@ -1905,29 +1981,72 @@ service cloud.firestore {
                <h2 className="text-4xl sm:text-5xl font-black text-white mb-2 sm:mb-4 tracking-tighter drop-shadow-lg">CARD BINDER</h2>
                <div className="flex items-center justify-center sm:justify-start gap-3">
                  <div className="bg-emerald-500/20 px-3 py-1 rounded-md border border-emerald-500/30">
-                    <p className="text-emerald-400 font-black tracking-[0.2em] text-xs sm:text-sm">{Object.keys(collection).length} / {CHARACTERS.length} UNIQUE CARDS</p>
+                    <p className="text-emerald-400 font-black tracking-[0.2em] text-xs sm:text-sm">
+                      {Object.keys(collection).length} / {CHARACTERS.length} UNIQUE CARDS
+                    </p>
                  </div>
                </div>
              </div>
+             
+             {/* SELL DUPLICATES BUTTON */}
+             <button 
+                onClick={() => {
+                   let coinsGained = 0;
+                   const newCol = { ...collection };
+                   for (const [id, count] of Object.entries(newCol)) {
+                       if (count > 4) { 
+                           const extras = count - 4;
+                           newCol[id] = 4;
+                           const card = getBaseCard(id);
+                           if (card) {
+                               let val = 5;
+                               if (card.rarity === 'Rare') val = 20;
+                               if (card.rarity === 'Epic') val = 50;
+                               if (card.rarity === 'Legendary') val = 200;
+                               if (card.rarity === 'GX') val = 500;
+                               if (card.isMassive) val *= 2;
+                               coinsGained += extras * val;
+                           }
+                       }
+                   }
+                   if (coinsGained > 0) {
+                       setCollection(newCol);
+                       setCoins(c => c + coinsGained);
+                       showToast(`Sold duplicates for ${coinsGained} Coins!`, 'success');
+                   } else {
+                       showToast(`No extra duplicates to sell (Keeping 4 of each).`, 'info');
+                   }
+                }}
+                className="mt-6 sm:mt-0 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-amber-400 font-black tracking-widest rounded-xl transition-all border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center gap-2 hover:-translate-y-1"
+             >
+                <Coins className="w-5 h-5" /> SELL EXTRAS
+             </button>
            </div>
            
+           {/* Normal & Massive Cards Rendering Logic */}
            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8 lg:gap-10 pb-24">
              {CHARACTERS.map(char => {
+               // Render base card
                const count = collection[char.id] || 0;
                const isOwned = count > 0;
+               
+               // Check if they own the massive version of this card
                const massiveId = char.id + '_massive';
                const massiveCount = collection[massiveId] || 0;
                const ownsMassive = massiveCount > 0;
 
                return (
                  <React.Fragment key={char.id}>
-                    <div className="relative group">
+                    {/* Base Card */}
+                    <div className="relative group cursor-pointer" onClick={() => isOwned && setSelectedBinderCard(char)}>
                     {isOwned && (
-                        <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-emerald-500 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(16,185,129,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">{count}</div>
+                        <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-emerald-500 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(16,185,129,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">
+                        {count}
+                        </div>
                     )}
                     <div className={`transition-all duration-500 ease-out ${!isOwned ? 'opacity-20 grayscale blur-[3px] hover:blur-none hover:opacity-50 hover:grayscale-0' : 'hover:-translate-y-4 hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)]'}`}>
                         {isOwned ? <TCGCard card={char} size="small" isFlipped={true} /> : (
-                            <div className="w-full aspect-[2.5/3.6] bg-slate-900/50 border-2 border-dashed border-slate-700/50 rounded-[1.5rem] flex flex-col items-center justify-center p-4 sm:p-6 text-center backdrop-blur-sm">
+                            <div className="w-full aspect-[25/36] bg-slate-900/50 border-2 border-dashed border-slate-700/50 rounded-[1.5rem] flex flex-col items-center justify-center p-4 sm:p-6 text-center backdrop-blur-sm">
                             <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-slate-800 mb-2 sm:mb-4" />
                             <span className="text-xs sm:text-sm text-slate-600 font-bold tracking-widest">LOCKED</span>
                             </div>
@@ -1935,9 +2054,12 @@ service cloud.firestore {
                     </div>
                     </div>
 
+                    {/* Render Massive version ONLY if they own it, placed right next to the base card */}
                     {ownsMassive && (
-                        <div className="relative group" key={massiveId}>
-                            <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-yellow-400 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(250,204,21,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">{massiveCount}</div>
+                        <div className="relative group cursor-pointer" key={massiveId} onClick={() => setSelectedBinderCard({...char, isMassive: true})}>
+                            <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-slate-900 text-white border-2 border-yellow-400 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black shadow-[0_0_20px_rgba(250,204,21,0.5)] z-20 transform group-hover:scale-110 transition-transform text-sm sm:text-lg">
+                                {massiveCount}
+                            </div>
                             <div className="transition-all duration-500 ease-out hover:-translate-y-4 hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
                                 <TCGCard card={{...char, isMassive: true}} size="small" isFlipped={true} />
                             </div>
@@ -1952,12 +2074,16 @@ service cloud.firestore {
 
         {/* DECK VIEW */}
         {activeTab === 'deck' && (() => {
+          const deckChars = deck.map(id => getBaseCard(id)).filter(Boolean);
           return (
           <div className="animate-in fade-in duration-500 flex flex-col pb-20">
             <div className="mb-6 sm:mb-10 border-b border-slate-800 pb-4 sm:pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-6">
-               <div><h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter flex items-center gap-4 drop-shadow-lg">BATTLE DECK</h2></div>
+               <div>
+                 <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter flex items-center gap-4 drop-shadow-lg">BATTLE DECK</h2>
+               </div>
                <div className={`px-5 sm:px-6 py-2 sm:py-3 rounded-2xl border-2 flex items-center gap-3 font-black tracking-widest shadow-xl transition-colors ${deck.length === MAX_DECK_SIZE ? 'bg-teal-500/20 text-teal-400 border-teal-500/50 shadow-[0_0_20px_rgba(20,184,166,0.3)]' : 'bg-slate-900/50 text-slate-400 border-slate-700/50'}`}>
-                 <Layers className="w-5 h-5 sm:w-6 sm:h-6" /><span>{deck.length} / {MAX_DECK_SIZE}</span>
+                 <Layers className="w-5 h-5 sm:w-6 sm:h-6" />
+                 <span>{deck.length} / {MAX_DECK_SIZE}</span>
                </div>
             </div>
 
@@ -1976,7 +2102,9 @@ service cloud.firestore {
                     const canAdd = availableCount > 0 && deck.length < MAX_DECK_SIZE;
                     return (
                       <div key={id} className={`relative transition-all duration-300 ease-out ${canAdd ? 'cursor-pointer hover:-translate-y-4 hover:shadow-[0_20px_40px_rgba(20,184,166,0.2)]' : 'opacity-30 cursor-not-allowed grayscale'}`} onClick={() => canAdd && addToDeck(id)}>
-                        <div className={`absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-black z-20 shadow-2xl border-2 ${canAdd ? 'bg-teal-500 text-slate-950 border-teal-300' : 'bg-slate-800 text-slate-500 border-slate-600'}`}>{availableCount}</div>
+                        <div className={`absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-black z-20 shadow-2xl border-2 ${canAdd ? 'bg-teal-500 text-slate-950 border-teal-300' : 'bg-slate-800 text-slate-500 border-slate-600'}`}>
+                          {availableCount}
+                        </div>
                         <TCGCard card={char} size="small" isFlipped={true} />
                       </div>
                     );
@@ -2016,7 +2144,9 @@ service cloud.firestore {
         })()}
 
         {/* TRADE VIEW */}
-        {activeTab === 'trades' && (<TradeHub user={user} db={db} collection={collection} setCollection={setCollection} showToast={showToast} setDbError={setDbError} profile={profile} />)}
+        {activeTab === 'trades' && (
+           <TradeHub user={user} db={db} collection={collection} setCollection={setCollection} showToast={showToast} setDbError={setDbError} profile={profile} />
+        )}
 
         {/* OFFLINE BATTLE VIEW */}
         {activeTab === 'battle' && (
@@ -2029,10 +2159,19 @@ service cloud.firestore {
                    <button onClick={() => navTo('deck')} className="mt-4 px-8 py-4 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-slate-500 rounded-full font-black tracking-widest text-white transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">GO TO DECK BUILDER</button>
                 </div>
              ) : battleDifficulty ? (
-                <BattleArena playerDeckIds={deck} difficulty={battleDifficulty} onWin={(amt) => setCoins(c => c + amt)} onLose={(amt) => setCoins(c => c + amt)} onExit={() => navTo('shop')} showToast={showToast} />
+                <BattleArena 
+                  playerDeckIds={deck} 
+                  difficulty={battleDifficulty}
+                  onWin={(amt) => setCoins(c => c + amt)} 
+                  onLose={(amt) => setCoins(c => c + amt)} 
+                  onExit={() => navTo('shop')} 
+                  showToast={showToast}
+                />
              ) : (
                 <div className="flex-1 flex flex-col items-center justify-center pb-10">
-                   <div className="p-6 bg-rose-500/10 rounded-3xl border border-rose-500/20 mb-8 shadow-[0_0_40px_rgba(225,29,72,0.2)]"><Swords className="w-20 h-20 text-rose-500 drop-shadow-md" /></div>
+                   <div className="p-6 bg-rose-500/10 rounded-3xl border border-rose-500/20 mb-8 shadow-[0_0_40px_rgba(225,29,72,0.2)]">
+                      <Swords className="w-20 h-20 text-rose-500 drop-shadow-md" />
+                   </div>
                    <h2 className="text-4xl sm:text-6xl font-black tracking-widest text-white mb-4 drop-shadow-2xl">BATTLE ARENA</h2>
                    <p className="text-slate-400 mb-14 text-lg font-medium tracking-wide">Select a difficulty. Harder bots yield greater coin rewards.</p>
                    
@@ -2040,23 +2179,31 @@ service cloud.firestore {
                       <button onClick={() => setBattleDifficulty('easy')} className="bg-slate-900/80 backdrop-blur-xl border border-slate-700 hover:border-emerald-500/80 rounded-[2rem] p-8 flex flex-col items-center transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_20px_40px_rgba(16,185,129,0.2)] group">
                          <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all border border-emerald-500/20"><Check className="w-10 h-10" /></div>
                          <h3 className="text-2xl font-black text-white tracking-widest mb-3">EASY</h3>
-                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800"><p className="text-emerald-400 text-sm font-bold tracking-widest">REWARD: 250 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p></div>
+                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+                           <p className="text-emerald-400 text-sm font-bold tracking-widest">REWARD: 250 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p>
+                         </div>
                       </button>
                       <button onClick={() => setBattleDifficulty('medium')} className="bg-slate-900/80 backdrop-blur-xl border border-slate-700 hover:border-amber-500/80 rounded-[2rem] p-8 flex flex-col items-center transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_20px_40px_rgba(245,158,11,0.2)] group">
                          <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500/20 transition-all border border-amber-500/20"><Layers className="w-10 h-10" /></div>
                          <h3 className="text-2xl font-black text-white tracking-widest mb-3">MEDIUM</h3>
-                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800"><p className="text-amber-400 text-sm font-bold tracking-widest">REWARD: 500 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p></div>
+                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+                           <p className="text-amber-400 text-sm font-bold tracking-widest">REWARD: 500 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p>
+                         </div>
                       </button>
                       <button onClick={() => setBattleDifficulty('hard')} className="bg-slate-900/80 backdrop-blur-xl border border-slate-700 hover:border-rose-500/80 rounded-[2rem] p-8 flex flex-col items-center transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_20px_40px_rgba(225,29,72,0.2)] group">
                          <div className="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-rose-500/20 transition-all border border-rose-500/20"><Swords className="w-10 h-10" /></div>
                          <h3 className="text-2xl font-black text-white tracking-widest mb-3">HARD</h3>
-                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800"><p className="text-rose-400 text-sm font-bold tracking-widest">REWARD: 1000 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p></div>
+                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+                           <p className="text-rose-400 text-sm font-bold tracking-widest">REWARD: 1000 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p>
+                         </div>
                       </button>
                       <button onClick={() => setBattleDifficulty('extreme')} className="bg-slate-900/80 backdrop-blur-xl border border-slate-700 hover:border-fuchsia-500/80 rounded-[2rem] p-8 flex flex-col items-center transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_20px_40px_rgba(217,70,239,0.2)] group relative overflow-hidden">
                          <div className="absolute inset-0 bg-gradient-to-t from-fuchsia-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                          <div className="w-20 h-20 bg-fuchsia-500/10 text-fuchsia-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-fuchsia-500/20 transition-all border border-fuchsia-500/20"><Skull className="w-10 h-10" /></div>
                          <h3 className="text-2xl font-black text-white tracking-widest mb-3 z-10">EXTREME</h3>
-                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-fuchsia-900/50 z-10"><p className="text-fuchsia-400 text-sm font-bold tracking-widest">REWARD: 2500 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p></div>
+                         <div className="bg-slate-950 px-4 py-2 rounded-xl border border-fuchsia-900/50 z-10">
+                           <p className="text-fuchsia-400 text-sm font-bold tracking-widest">REWARD: 2500 <Coins className="inline w-4 h-4 text-yellow-500 -mt-1 ml-1"/></p>
+                         </div>
                       </button>
                    </div>
                 </div>
@@ -2075,9 +2222,26 @@ service cloud.firestore {
                    <button onClick={() => navTo('deck')} className="mt-4 px-8 py-4 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-slate-500 rounded-full font-black tracking-widest text-white transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">GO TO DECK BUILDER</button>
                 </div>
              ) : onlineMatchId ? (
-                <OnlineBattleArena playerDeckIds={deck} onWin={() => setCoins(c => c + 1000)} onLose={() => setCoins(c => c + 100)} onExit={() => navTo('shop')} user={user} db={db} existingMatchId={onlineMatchId} showToast={showToast} setDbError={setDbError} />
+                <OnlineBattleArena 
+                  playerDeckIds={deck} 
+                  onWin={() => setCoins(c => c + 1000)} 
+                  onLose={() => setCoins(c => c + 100)} 
+                  onExit={() => navTo('shop')} 
+                  user={user}
+                  db={db}
+                  existingMatchId={onlineMatchId}
+                  showToast={showToast}
+                  setDbError={setDbError}
+                />
              ) : (
-                <OnlineLobby user={user} db={db} profile={profile} setDbError={setDbError} onStartMatch={(matchId) => setOnlineMatchId(matchId)} showToast={showToast} />
+                <OnlineLobby 
+                   user={user} 
+                   db={db} 
+                   profile={profile}
+                   setDbError={setDbError} 
+                   onStartMatch={(matchId) => setOnlineMatchId(matchId)}
+                   showToast={showToast}
+                />
              )}
           </div>
         )}
@@ -2085,8 +2249,17 @@ service cloud.firestore {
       </main>
       
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes pack-shake { 0%, 100% { transform: translateX(0) rotate(0deg) scale(1.05); } 25% { transform: translateX(-8px) rotate(-4deg) scale(1.05); } 50% { transform: translateX(8px) rotate(4deg) scale(1.05); } 75% { transform: translateX(-8px) rotate(-4deg) scale(1.05); } }
-        @keyframes pack-burst { 0% { transform: scale(1.05); filter: brightness(1); opacity: 1; } 40% { transform: scale(1.2); filter: brightness(2) contrast(1.5); opacity: 1; } 100% { transform: scale(3.5); filter: brightness(3); opacity: 0; } }
+        @keyframes pack-shake {
+          0%, 100% { transform: translateX(0) rotate(0deg) scale(1.05); }
+          25% { transform: translateX(-8px) rotate(-4deg) scale(1.05); }
+          50% { transform: translateX(8px) rotate(4deg) scale(1.05); }
+          75% { transform: translateX(-8px) rotate(-4deg) scale(1.05); }
+        }
+        @keyframes pack-burst {
+          0% { transform: scale(1.05); filter: brightness(1); opacity: 1; }
+          40% { transform: scale(1.2); filter: brightness(2) contrast(1.5); opacity: 1; }
+          100% { transform: scale(3.5); filter: brightness(3); opacity: 0; }
+        }
         .animate-pack-shake { animation: pack-shake 0.3s cubic-bezier(.36,.07,.19,.97) infinite; }
         .animate-pack-burst { animation: pack-burst 0.6s ease-out forwards; }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
