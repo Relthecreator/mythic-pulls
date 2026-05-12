@@ -42,10 +42,11 @@ const ENERGY_CARDS = Object.keys(ELEMENTS).map((el) => ({
   rarity: 'Energy',
   element: el,
   isEnergy: true,
-  hp: 0,
-  dmg: 0,
+  hp: '—',
+  attack: 'Empower',
+  dmg: '⚡',
   flavor: `Pure ${el} elemental energy. Equip to power up your attacks.`,
-  imgSrc: '' 
+  imgSrc: `https://api.dicebear.com/9.x/shapes/svg?seed=${el}Energy` 
 }));
 
 const COMBAT_CHARACTERS = [
@@ -308,6 +309,39 @@ const ProfileSetup = ({ onComplete, user, db }) => {
     const [error, setError] = useState('');
     const [isChecking, setIsChecking] = useState(false);
 
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 150;
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                setAvatar(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleSubmit = async () => {
         const trimmed = username.trim();
         if (trimmed.length < 3 || trimmed.length > 16) { setError('Username must be 3-16 characters.'); return; }
@@ -333,11 +367,20 @@ const ProfileSetup = ({ onComplete, user, db }) => {
                 <h2 className="text-3xl font-black text-white tracking-widest mb-2">CREATE PROFILE</h2>
                 <p className="text-slate-400 mb-8 font-medium">Choose how you'll appear to other players online.</p>
                 <div className="w-full mb-8">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Select Avatar</label>
-                    <div className="flex flex-wrap justify-center gap-3">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Select or Upload Avatar</label>
+                    <div className="flex flex-wrap justify-center gap-3 mb-4">
                         {AVATARS.map((url, i) => (
-                            <img key={i} src={url} alt="avatar" className={`w-14 h-14 rounded-full cursor-pointer transition-all ${avatar === url ? 'ring-4 ring-blue-500 scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'opacity-50 hover:opacity-100'}`} onClick={() => setAvatar(url)} />
+                            <img key={i} src={url} alt="avatar" className={`w-14 h-14 rounded-full cursor-pointer transition-all object-cover ${avatar === url ? 'ring-4 ring-blue-500 scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'opacity-50 hover:opacity-100'}`} onClick={() => setAvatar(url)} />
                         ))}
+                        {avatar && !AVATARS.includes(avatar) && (
+                            <img src={avatar} alt="custom avatar" className="w-14 h-14 rounded-full ring-4 ring-blue-500 scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)] object-cover" />
+                        )}
+                    </div>
+                    <div className="flex justify-center">
+                        <label className="cursor-pointer px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold tracking-widest transition-colors border border-slate-600">
+                            UPLOAD IMAGE
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </label>
                     </div>
                 </div>
                 <div className="w-full mb-8 text-left">
@@ -360,34 +403,15 @@ const TCGCard = ({ card, size = 'large', isFlipped = true, onClick, inBattle = f
   const rarityStyle = RARITIES[card.rarity || 'Common'];
   const elementStyle = ELEMENTS[card.element || 'Water'];
   const ElementIcon = elementStyle?.icon || CircleDashed;
-  let dims = size === 'large' ? 'w-72 h-[29rem] sm:w-[24rem] sm:h-[36rem] text-base' : size === 'small' ? 'w-full aspect-[2.5/3.6] text-[0.6rem] sm:text-xs' : 'w-16 sm:w-20 lg:w-24 aspect-[2.5/3.6] text-[0.4rem]';
-  let padding = size === 'large' ? 'p-3 sm:p-5' : size === 'small' ? 'p-2' : 'p-1';
-  let iconSize = size === 'large' ? 'w-48 h-48' : size === 'small' ? 'w-16 h-16' : 'w-8 h-8';
-  let elementIconSize = size === 'large' ? 'w-8 h-8' : size === 'small' ? 'w-3 h-3' : 'w-2 h-2 hidden sm:block';
+  
+  let dims = size === 'large' ? 'w-72 h-[29rem] sm:w-[24rem] sm:h-[36rem] text-base' : size === 'medium' ? 'w-32 sm:w-44 aspect-[25/36] text-[0.65rem] sm:text-xs' : size === 'small' ? 'w-full aspect-[25/36] text-[0.6rem] sm:text-xs' : 'w-16 sm:w-20 lg:w-24 aspect-[25/36] text-[0.4rem]';
+  let padding = size === 'large' ? 'p-3 sm:p-5' : size === 'medium' ? 'p-2 sm:p-3' : size === 'small' ? 'p-2' : 'p-1';
+  let iconSize = size === 'large' ? 'w-48 h-48' : size === 'medium' ? 'w-20 h-20 sm:w-28 sm:h-28' : size === 'small' ? 'w-16 h-16' : 'w-8 h-8';
+  let elementIconSize = size === 'large' ? 'w-8 h-8' : size === 'medium' ? 'w-4 h-4 sm:w-5 sm:h-5' : size === 'small' ? 'w-3 h-3' : 'w-2 h-2 hidden sm:block';
 
   if (card.isMassive && size === 'large') dims += ' scale-110';
   const selectionRing = isSelected ? 'ring-4 ring-amber-400 ring-offset-2 ring-offset-slate-900 scale-105 shadow-[0_0_30px_rgba(245,158,11,0.4)]' : '';
   const massiveGlow = card.isMassive ? 'shadow-[0_0_40px_rgba(234,179,8,0.6)] border-yellow-400' : '';
-
-  if (card.isEnergy) {
-    return (
-      <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
-        <div className={`w-full h-full absolute transition-transform duration-500 preserve-3d shadow-2xl rounded-3xl ${!isFlipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d', transform: !isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
-          <div className={`absolute w-full h-full backface-hidden rounded-3xl border-2 sm:border-[4px] border-slate-700 bg-gradient-to-br ${elementStyle.artBg} flex flex-col items-center justify-between py-4 sm:py-8 shadow-inner overflow-hidden`} style={{ backfaceVisibility: 'hidden' }}>
-             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-             {size !== 'mini' && <h3 className={`font-black uppercase tracking-[0.3em] text-white/90 drop-shadow-md ${size === 'large' ? 'text-3xl mt-4' : 'text-[0.65rem] sm:text-xs'}`}>ENERGY</h3>}
-             <div className={`bg-white/10 p-3 sm:p-8 rounded-full shadow-[0_0_50px_rgba(255,255,255,0.2)] backdrop-blur-xl border border-white/20 group-hover:scale-110 transition-all duration-500`}>
-                <ElementIcon className={`${size === 'large' ? 'w-32 h-32' : size === 'small' ? 'w-10 h-10' : 'w-6 h-6'} text-white drop-shadow-lg`} />
-             </div>
-             {size !== 'mini' && <h4 className={`font-black uppercase tracking-[0.4em] text-white/80 drop-shadow-md mb-2 ${size === 'large' ? 'text-2xl' : 'text-[0.55rem] sm:text-[0.65rem]'}`}>{card.element}</h4>}
-          </div>
-          <div className="absolute w-full h-full backface-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-black border-2 sm:border-[4px] border-slate-700/50 rounded-3xl flex items-center justify-center shadow-xl" style={{ transform: 'rotateY(180deg)' }}>
-             <Layers className={`${size === 'large' ? 'w-24 h-24' : 'w-6 h-6 sm:w-10 sm:h-10'} text-amber-500 drop-shadow-md`} />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`relative cursor-pointer group perspective-1000 ${dims} ${selectionRing}`} onClick={onClick} style={{ perspective: '1000px' }}>
@@ -751,7 +775,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
       {/* BOT SIDE */}
       <div className="flex-1 min-h-[280px] shrink-0 bg-slate-950/80 border-b border-slate-800 p-4 flex flex-col relative z-10">
          <div className="absolute top-4 left-4 flex gap-4">
-            <div className="w-10 sm:w-12 aspect-[2.5/3.6] bg-gradient-to-br from-slate-800 to-black border-2 border-slate-600 rounded-lg flex flex-col items-center justify-center shadow-md">
+            <div className="w-10 sm:w-12 aspect-[25/36] bg-gradient-to-br from-slate-800 to-black border-2 border-slate-600 rounded-lg flex flex-col items-center justify-center shadow-md">
                <Layers className="w-4 h-4 text-slate-500 opacity-50" /><span className="text-slate-400 font-black text-[0.6rem] mt-1">{bot.deck.length}</span>
             </div>
             <div className="flex flex-col gap-1">
@@ -793,7 +817,7 @@ const BattleArena = ({ playerDeckIds, onWin, onLose, onExit, difficulty, showToa
       {/* PLAYER SIDE */}
       <div className="flex-[1.5] min-h-[420px] shrink-0 bg-slate-900 p-4 flex flex-col justify-between relative z-10">
          <div className="absolute bottom-6 left-6 flex flex-col items-center">
-            <div className={`w-16 sm:w-20 aspect-[2.5/3.6] bg-gradient-to-br from-amber-900 to-black border-2 sm:border-4 border-amber-600/80 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:-translate-y-2 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${gameState === 'playerTurn' && !player.hasDrawnThisTurn ? 'ring-4 ring-blue-500 animate-pulse' : ''}`} onClick={handleDraw}>
+            <div className={`w-16 sm:w-20 aspect-[25/36] bg-gradient-to-br from-amber-900 to-black border-2 sm:border-4 border-amber-600/80 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:-translate-y-2 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${gameState === 'playerTurn' && !player.hasDrawnThisTurn ? 'ring-4 ring-blue-500 animate-pulse' : ''}`} onClick={handleDraw}>
                <Layers className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 opacity-80" /><span className="text-slate-200 font-black text-xs sm:text-sm mt-1 drop-shadow-md">{player.deck.length}</span>
             </div>
             <span className="text-slate-400 text-[0.6rem] sm:text-xs font-bold mt-2 tracking-widest uppercase">Deck</span>
@@ -1290,7 +1314,7 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
       {/* OPPONENT SIDE */}
       <div className="flex-1 min-h-[280px] shrink-0 bg-slate-950/80 border-b border-slate-800 p-4 flex flex-col relative z-10">
          <div className="absolute top-4 left-4 flex gap-4">
-            <div className="w-10 sm:w-12 aspect-[2.5/3.6] bg-gradient-to-br from-fuchsia-900/40 to-black border-2 border-slate-700 rounded-lg flex flex-col items-center justify-center shadow-md">
+            <div className="w-10 sm:w-12 aspect-[25/36] bg-gradient-to-br from-fuchsia-900/40 to-black border-2 border-slate-700 rounded-lg flex flex-col items-center justify-center shadow-md">
                <Layers className="w-4 h-4 text-fuchsia-500/50" /><span className="text-slate-400 font-black text-[0.6rem] mt-1">{opponent?.deck?.length || 0}</span>
             </div>
             <div className="flex flex-col gap-1">
@@ -1332,7 +1356,7 @@ const OnlineBattleArena = ({ playerDeckIds, onWin, onLose, onExit, user, db, exi
       {/* PLAYER SIDE */}
       <div className="flex-[1.5] min-h-[420px] shrink-0 bg-slate-900 p-4 flex flex-col justify-between relative z-10">
          <div className="absolute bottom-6 left-6 flex flex-col items-center">
-            <div className={`w-16 sm:w-20 aspect-[2.5/3.6] bg-gradient-to-br from-fuchsia-900/60 to-black border-2 sm:border-4 border-fuchsia-600/80 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:-translate-y-2 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${isMyTurn && !me.hasDrawnThisTurn ? 'ring-4 ring-blue-500 animate-pulse' : ''}`} onClick={handleDraw}>
+            <div className={`w-16 sm:w-20 aspect-[25/36] bg-gradient-to-br from-fuchsia-900/60 to-black border-2 sm:border-4 border-fuchsia-600/80 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:-translate-y-2 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.5)] ${isMyTurn && !me.hasDrawnThisTurn ? 'ring-4 ring-blue-500 animate-pulse' : ''}`} onClick={handleDraw}>
                <Layers className="w-6 h-6 sm:w-8 sm:h-8 text-fuchsia-500 opacity-80" /><span className="text-slate-200 font-black text-xs sm:text-sm mt-1 drop-shadow-md">{me.deck.length}</span>
             </div>
             <span className="text-slate-400 text-[0.6rem] sm:text-xs font-bold mt-2 tracking-widest uppercase">Deck</span>
@@ -1665,10 +1689,10 @@ service cloud.firestore {
            <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-10 animate-in fade-in zoom-in-95 duration-500">
               <Crown className="w-20 h-20 text-yellow-400 mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
               <h2 className="text-4xl sm:text-6xl font-black text-yellow-400 tracking-widest mb-12 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)] text-center">ADMIN DASHBOARD</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-                 <button onClick={() => { setCoins(c => c + 1000000); showToast("Added 1,000,000 Coins!", "success"); }} className="p-8 bg-slate-900 border-2 border-yellow-500/50 rounded-[2rem] hover:bg-yellow-500/10 hover:border-yellow-400 hover:scale-105 transition-all text-xl font-black text-white flex flex-col items-center gap-4 shadow-2xl group">
-                     <div className="p-4 bg-yellow-500/20 rounded-full group-hover:scale-110 transition-transform"><Coins className="w-12 h-12 text-yellow-400" /></div>
-                     ADD 1,000,000 COINS
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+                 <button onClick={() => { setCoins(c => c + 1000); showToast("Added 1,000 Coins!", "success"); }} className="p-6 bg-slate-900 border-2 border-yellow-500/50 rounded-[2rem] hover:bg-yellow-500/10 hover:border-yellow-400 hover:scale-105 transition-all text-lg font-black text-white flex flex-col items-center gap-4 shadow-2xl group text-center">
+                     <div className="p-4 bg-yellow-500/20 rounded-full group-hover:scale-110 transition-transform"><Coins className="w-10 h-10 text-yellow-400" /></div>
+                     ADD 1,000 COINS
                  </button>
                  <button onClick={() => { 
                          const newCol = { ...collection };
@@ -1678,10 +1702,21 @@ service cloud.firestore {
                          });
                          setCollection(newCol); showToast("Granted x10 of ALL cards!", "success");
                      }} 
-                     className="p-8 bg-slate-900 border-2 border-purple-500/50 rounded-[2rem] hover:bg-purple-500/10 hover:border-purple-400 hover:scale-105 transition-all text-xl font-black text-white flex flex-col items-center gap-4 shadow-2xl group"
+                     className="p-6 bg-slate-900 border-2 border-purple-500/50 rounded-[2rem] hover:bg-purple-500/10 hover:border-purple-400 hover:scale-105 transition-all text-lg font-black text-white flex flex-col items-center gap-4 shadow-2xl group text-center"
                  >
-                     <div className="p-4 bg-purple-500/20 rounded-full group-hover:scale-110 transition-transform"><Layers className="w-12 h-12 text-purple-400" /></div>
+                     <div className="p-4 bg-purple-500/20 rounded-full group-hover:scale-110 transition-transform"><Layers className="w-10 h-10 text-purple-400" /></div>
                      UNLOCK EVERYTHING
+                 </button>
+                 <button onClick={() => { 
+                         setCoins(500);
+                         setCollection(INITIAL_COLLECTION);
+                         setDeck(STARTER_DECK);
+                         showToast("Economy and collection reset!", "success");
+                     }} 
+                     className="p-6 bg-slate-900 border-2 border-rose-500/50 rounded-[2rem] hover:bg-rose-500/10 hover:border-rose-400 hover:scale-105 transition-all text-lg font-black text-white flex flex-col items-center gap-4 shadow-2xl group text-center"
+                 >
+                     <div className="p-4 bg-rose-500/20 rounded-full group-hover:scale-110 transition-transform"><AlertCircle className="w-10 h-10 text-rose-400" /></div>
+                     RESET MY DATA
                  </button>
               </div>
            </div>
@@ -1702,20 +1737,27 @@ service cloud.firestore {
                         const promoCard = getBaseCard(box.promoId);
                         const elementStyle = promoCard ? ELEMENTS[promoCard.element] : null;
                         return (
-                        <div key={box.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-purple-500/30 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-purple-500 transition-all hover:-translate-y-4 duration-300 flex flex-col lg:flex-row">
-                            <div className={`w-full lg:w-1/2 h-56 lg:h-auto bg-gradient-to-b ${box.color} flex items-center justify-center p-6 text-center relative overflow-hidden shrink-0 border-r border-white/10`}>
-                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-30 mix-blend-overlay z-0"></div>
-                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500"></div>
-                                {promoCard && (
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-700 ease-out z-0">
-                                        <img src={promoCard.imgSrc} className={`w-48 h-48 sm:w-64 sm:h-64 object-contain ${elementStyle?.imgFilter} drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_0_40px_rgba(255,255,255,0.7)]`} alt="Featured" />
+                        <div key={box.id} className="group relative bg-slate-900/80 backdrop-blur-xl border border-purple-500/30 rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl hover:border-purple-500 transition-all hover:-translate-y-4 duration-300 flex flex-col lg:flex-row p-6 sm:p-10 gap-8">
+                            
+                            {/* 3D Box Illustration */}
+                            <div className="relative w-48 h-48 sm:w-64 sm:h-64 mx-auto shrink-0 transform-gpu group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-500 perspective-1000 mt-8 mb-4">
+                                {/* Box Front */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${box.color} border-4 border-purple-500/50 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center overflow-hidden z-20`}>
+                                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-40 mix-blend-overlay"></div>
+                                    {promoCard && <img src={promoCard.imgSrc} className={`w-32 h-32 sm:w-48 sm:h-48 object-contain ${elementStyle?.imgFilter} drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_0_40px_rgba(255,255,255,0.8)] transition-all`} alt="Featured Promo" />}
+                                    <div className="absolute bottom-0 w-full bg-black/90 py-2 sm:py-3 border-t-2 border-purple-500/50 text-center backdrop-blur-md">
+                                        <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-yellow-400 tracking-[0.2em] text-xs sm:text-sm uppercase drop-shadow-md">{box.name}</span>
                                     </div>
-                                )}
-                                <div className="z-10 bg-black/80 w-[120%] py-3 sm:py-4 backdrop-blur-md border-y border-white/20 transform -rotate-6 group-hover:-rotate-3 transition-transform duration-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] flex flex-col items-center">
-                                    <h3 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-400 to-yellow-400 tracking-[0.2em] drop-shadow-lg uppercase">{box.name}</h3>
                                 </div>
+                                {/* Box Top (Lid) */}
+                                <div className={`absolute -top-8 sm:-top-10 left-4 sm:left-5 w-full h-8 sm:h-10 bg-gradient-to-r ${box.color} border-t-4 border-x-4 border-purple-500/50 rounded-t-xl transform-gpu skew-x-[-45deg] origin-bottom brightness-75 z-10 flex items-center justify-center`}>
+                                    <span className="text-white/30 font-black tracking-widest text-[0.5rem] sm:text-xs transform-gpu -skew-x-[-45deg] scale-y-50">MYTHIC PULLS</span>
+                                </div>
+                                {/* Box Side */}
+                                <div className={`absolute top-4 sm:top-5 -right-8 sm:-right-10 w-8 sm:w-10 h-full bg-gradient-to-b ${box.color} border-r-4 border-y-4 border-purple-500/50 rounded-r-xl transform-gpu skew-y-[-45deg] origin-left brightness-50 z-10`}></div>
                             </div>
-                            <div className="p-6 sm:p-10 flex flex-col flex-1 justify-between bg-gradient-to-b from-slate-900 to-slate-950 relative z-20">
+
+                            <div className="flex flex-col flex-1 justify-center z-20">
                                 <div>
                                     <div className="flex items-center gap-2 mb-4 bg-purple-500/10 w-fit px-3 py-1 rounded-lg border border-purple-500/20">
                                         <Sparkles className="w-4 h-4 text-purple-400" /><span className="text-purple-400 font-bold tracking-widest text-xs uppercase">Premium Item</span>
@@ -1841,7 +1883,7 @@ service cloud.firestore {
                        <div className="flex flex-wrap justify-center gap-6 sm:gap-10 mb-16 sm:mb-24">
                          {currentCards.map((card, index) => (
                            <div key={card.instanceId} className="animate-in slide-in-from-bottom-12 fade-in hover:-translate-y-6 sm:hover:-translate-y-8 transition-transform duration-500 ease-out" style={{ animationDelay: `${(index % 10) * 50}ms` }}>
-                             <TCGCard card={card} isFlipped={true} size="small" />
+                             <TCGCard card={card} isFlipped={true} size="medium" />
                            </div>
                          ))}
                        </div>
@@ -1951,13 +1993,15 @@ service cloud.firestore {
                            const char = getBaseCard(cardId);
                            return (
                              <div key={`slot-${index}-${cardId}`} className="relative cursor-pointer hover:scale-95 transition-transform group" onClick={() => removeFromDeck(index)}>
-                               <div className="absolute inset-0 bg-rose-950/80 z-30 rounded-[1.3rem] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm border-2 border-rose-500/50 shadow-inner"><Skull className="w-6 h-6 sm:w-8 sm:h-8 text-rose-500 drop-shadow-lg" /></div>
+                               <div className="absolute inset-0 bg-rose-950/80 z-30 rounded-[1.3rem] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all backdrop-blur-sm border-2 border-rose-500/50 shadow-inner">
+                                 <Skull className="w-6 h-6 sm:w-8 sm:h-8 text-rose-500 drop-shadow-lg" />
+                               </div>
                                <TCGCard card={char} size="small" isFlipped={true} />
                              </div>
                            );
                         } else {
                            return (
-                             <div key={`empty-${index}`} className="w-full aspect-[2.5/3.6] bg-slate-950/40 border-2 border-dashed border-slate-700/50 rounded-[1.3rem] flex flex-col items-center justify-center p-2 text-center group transition-colors hover:border-teal-500/30 hover:bg-teal-950/20">
+                             <div key={`empty-${index}`} className="w-full aspect-[25/36] bg-slate-950/40 border-2 border-dashed border-slate-700/50 rounded-[1.3rem] flex flex-col items-center justify-center p-2 text-center group transition-colors hover:border-teal-500/30 hover:bg-teal-950/20">
                                <span className="text-slate-700 font-black text-xl sm:text-2xl opacity-50 group-hover:text-teal-500/60 transition-colors">{index + 1}</span>
                              </div>
                            );
