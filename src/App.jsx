@@ -4,7 +4,7 @@ import {
   Crown, Shield, Zap, Swords, Skull, Heart, CircleDashed, LayoutDashboard,
   Layers, Store, ZapIcon, Crosshair, ShieldAlert, AlertCircle, Play, BookOpen, 
   LogOut, Users, Check, X, Info, ArrowRightLeft, PackageOpen, UserCircle, 
-  Trophy, BarChart3, Medal
+  Trophy, BarChart3, Medal, Wand2
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -1597,6 +1597,61 @@ export default function App() {
   };
   const removeFromDeck = (indexToRemove) => setDeck(prev => prev.filter((_, idx) => idx !== indexToRemove));
 
+  const autoBuildDeck = () => {
+    const newDeck = [];
+    const availableChars = [];
+    
+    // Gather all owned non-energy cards
+    for (const [id, count] of Object.entries(collection)) {
+        const card = getBaseCard(id);
+        if (card && !card.isEnergy) {
+            for (let i = 0; i < count; i++) availableChars.push({ ...card, originalId: id });
+        }
+    }
+    
+    // Sort by rarity (and prioritize massive variants)
+    availableChars.sort((a, b) => {
+        const rarityDiff = RARITY_WEIGHTS[b.rarity] - RARITY_WEIGHTS[a.rarity];
+        if (rarityDiff !== 0) return rarityDiff;
+        if (b.isMassive && !a.isMassive) return 1;
+        if (!b.isMassive && a.isMassive) return -1;
+        return 0;
+    });
+    
+    // Select the top 20 cards for the deck
+    const selectedChars = availableChars.slice(0, 20);
+    selectedChars.forEach(c => newDeck.push(c.originalId));
+    
+    // Tally the elements of the selected characters
+    const elementCounts = {};
+    selectedChars.forEach(c => {
+        elementCounts[c.element] = (elementCounts[c.element] || 0) + 1;
+    });
+    
+    // Distribute remaining slots intelligently between your primary and secondary energy needs
+    const topElements = Object.entries(elementCounts).sort((a, b) => b[1] - a[1]);
+    let neededEnergies = MAX_DECK_SIZE - newDeck.length;
+    
+    if (topElements.length > 0) {
+        const primaryElement = topElements[0][0];
+        const secondaryElement = topElements.length > 1 ? topElements[1][0] : primaryElement;
+        
+        for(let i = 0; i < neededEnergies; i++) {
+            if (i % 3 === 0 && topElements.length > 1) {
+                 newDeck.push(`en_${secondaryElement.toLowerCase()}`);
+            } else {
+                 newDeck.push(`en_${primaryElement.toLowerCase()}`);
+            }
+        }
+    } else {
+        // Fallback if collection is completely empty
+        for(let i = 0; i < neededEnergies; i++) newDeck.push('en_water');
+    }
+    
+    setDeck(newDeck);
+    showToast("Deck Auto-Built!", "success");
+  };
+
   const navTo = (tab) => { setActiveTab(tab); setBattleDifficulty(null); setOnlineMatchId(null); setShowProfileModal(false); };
 
   const handleGameResult = (isWin, amount) => {
@@ -2216,9 +2271,14 @@ service cloud.firestore {
                <div>
                  <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter flex items-center gap-4 drop-shadow-lg">BATTLE DECK</h2>
                </div>
-               <div className={`px-5 sm:px-6 py-2 sm:py-3 rounded-2xl border-2 flex items-center gap-3 font-black tracking-widest shadow-xl transition-colors ${deck.length === MAX_DECK_SIZE ? 'bg-teal-500/20 text-teal-400 border-teal-500/50 shadow-[0_0_20px_rgba(20,184,166,0.3)]' : 'bg-slate-900/50 text-slate-400 border-slate-700/50'}`}>
-                 <Layers className="w-5 h-5 sm:w-6 sm:h-6" />
-                 <span>{deck.length} / {MAX_DECK_SIZE}</span>
+               <div className="flex items-center gap-4">
+                 <button onClick={autoBuildDeck} className="px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black tracking-widest shadow-[0_0_20px_rgba(79,70,229,0.4)] flex items-center gap-2 transition-all hover:-translate-y-1">
+                    <Wand2 className="w-5 h-5 sm:w-6 sm:h-6" /> AUTO-BUILD
+                 </button>
+                 <div className={`px-5 sm:px-6 py-2 sm:py-3 rounded-2xl border-2 flex items-center gap-3 font-black tracking-widest shadow-xl transition-colors ${deck.length === MAX_DECK_SIZE ? 'bg-teal-500/20 text-teal-400 border-teal-500/50 shadow-[0_0_20px_rgba(20,184,166,0.3)]' : 'bg-slate-900/50 text-slate-400 border-slate-700/50'}`}>
+                   <Layers className="w-5 h-5 sm:w-6 sm:h-6" />
+                   <span>{deck.length} / {MAX_DECK_SIZE}</span>
+                 </div>
                </div>
             </div>
 
